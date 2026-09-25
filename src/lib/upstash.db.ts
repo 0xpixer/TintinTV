@@ -264,13 +264,12 @@ function getUpstashRedisClient(): Redis {
   let client: Redis | undefined = (global as any)[globalKey];
 
   if (!client) {
-    const upstashUrl = process.env.UPSTASH_URL;
-    const upstashToken = process.env.UPSTASH_TOKEN;
+    const upstashUrl = process.env.UPSTASH_URL || process.env.KV_REST_API_URL;
+    const upstashToken =
+      process.env.UPSTASH_TOKEN || process.env.KV_REST_API_TOKEN;
 
     if (!upstashUrl || !upstashToken) {
-      throw new Error(
-        'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN env variables must be set'
-      );
+      throw new Error('Upstash REST URL and token env variables must be set');
     }
 
     // 创建 Upstash Redis 客户端
