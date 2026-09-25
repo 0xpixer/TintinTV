@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-25T14:24:22Z",
+  "title": "Design System: TintinTV",
+  "extensions": {
+    "colorMeta": {
+      "night": { "role": "background", "displayName": "Cinema Night" },
+      "warm-focus": { "role": "accent", "displayName": "Warm Focus" }
+    },
+    "shadows": [
+      {
+        "name": "poster-hover",
+        "value": "0 16px 32px rgba(0, 0, 0, .28)",
+        "purpose": "Only for focused or hovered posters"
+      }
+    ],
+    "motion": [
+      {
+        "name": "control",
+        "value": "160ms ease",
+        "purpose": "Navigation and control state changes"
+      }
+    ],
+    "breakpoints": [
+      { "name": "mobile-navigation", "value": "767px" },
+      { "name": "player-side-panel", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "description": "High-contrast action over film artwork",
+      "html": "<button class=\"tv-primary\">查看片源</button>",
+      "css": ".tv-primary{background:#fff;color:#101114;border:0;border-radius:6px;padding:12px 20px;font-weight:600}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Quiet home cinema",
+    "overview": "Artwork and video lead; navigation and controls stay restrained.",
+    "keyCharacteristics": [
+      "Real poster art",
+      "Near-black default",
+      "Visible focus",
+      "Compact controls"
+    ],
+    "rules": [],
+    "dos": [
+      "Keep artwork and playback primary",
+      "Keep controls reachable by keyboard"
+    ],
+    "donts": ["Use Apple branding", "Let poster art overflow the player"]
+  }
+}

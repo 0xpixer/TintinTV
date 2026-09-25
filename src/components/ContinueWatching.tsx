@@ -111,7 +111,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                 key={index}
                 className='min-w-[104px] w-[104px] sm:min-w-[170px] sm:w-[170px]'
               >
-                <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-slate-200 animate-pulse dark:bg-slate-800'>
+                <div className='relative aspect-[2/3] w-full overflow-hidden rounded-2xl bg-slate-200 animate-pulse dark:bg-slate-800'>
                   <div className='absolute inset-0 shimmer'></div>
                 </div>
                 <div className='mt-2 h-4 rounded bg-slate-200 animate-pulse dark:bg-slate-800'></div>

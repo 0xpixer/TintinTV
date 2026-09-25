@@ -1,6 +1,6 @@
 'use client';
 
-import { Clover, Film, Home, Search, Tv } from 'lucide-react';
+import { Clover, Film, Heart, Home, Search, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -19,7 +19,6 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
 
   const navItems = [
     { icon: Home, label: '首页', href: '/' },
-    { icon: Search, label: '搜索', href: '/search' },
     {
       icon: Film,
       label: '电影',
@@ -35,6 +34,8 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
       label: '综艺',
       href: '/douban?type=show',
     },
+    { icon: Heart, label: '收藏', href: '/favorites' },
+    { icon: Search, label: '搜索', href: '/search' },
   ];
 
   const isActive = (href: string) => {
@@ -53,7 +54,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
 
   return (
     <nav
-      className='md:hidden fixed left-0 right-0 z-[600] overflow-hidden border-t border-slate-200/70 bg-white/90 shadow-[0_-12px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90'
+      className='tv-mobile-nav md:hidden fixed left-0 right-0 z-[600] overflow-hidden'
       style={{
         /* 紧贴视口底部，同时在内部留出安全区高度 */
         bottom: 0,
@@ -64,16 +65,17 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
         {navItems.map((item) => {
           const active = isActive(item.href);
           return (
-            <li key={item.href} className='flex-shrink-0 w-1/5'>
+            <li key={item.href} className='flex-shrink-0 w-1/6'>
               <Link
                 href={item.href}
+                aria-current={active ? 'page' : undefined}
                 className='flex h-16 w-full flex-col items-center justify-center gap-1 text-xs transition-all duration-300 ease-out group'
               >
                 <div
-                  className={`relative rounded-lg p-2 transition-all duration-300 ease-out ${
+                  className={`relative rounded-md p-2 transition-all duration-300 ease-out ${
                     active
-                      ? 'bg-slate-950 text-white shadow-soft dark:bg-white dark:text-slate-950'
-                      : 'text-slate-500 hover:bg-slate-950/5 dark:text-slate-400 dark:hover:bg-white/10'
+                      ? 'bg-white text-[#101114] dark:bg-white dark:text-[#101114]'
+                      : 'text-slate-500 hover:bg-white/10 dark:text-slate-400 dark:hover:bg-white/10'
                   }`}
                 >
                   <item.icon className='h-5 w-5 transition-all duration-300 ease-out' />

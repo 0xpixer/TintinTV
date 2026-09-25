@@ -15,10 +15,10 @@ export function ThemeToggle() {
     if (!meta) {
       const meta = document.createElement('meta');
       meta.name = 'theme-color';
-      meta.content = theme === 'dark' ? '#070a0f' : '#ecfeff';
+      meta.content = theme === 'dark' ? '#101114' : '#f6f7f8';
       document.head.appendChild(meta);
     } else {
-      meta.setAttribute('content', theme === 'dark' ? '#070a0f' : '#ecfeff');
+      meta.setAttribute('content', theme === 'dark' ? '#101114' : '#f6f7f8');
     }
   };
 
@@ -50,7 +50,8 @@ export function ThemeToggle() {
     <button
       onClick={toggleTheme}
       className='flex h-10 w-10 items-center justify-center rounded-full p-2 text-slate-600 transition-colors hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white'
-      aria-label='Toggle theme'
+      aria-label={resolvedTheme === 'dark' ? '切换浅色模式' : '切换深色模式'}
+      title={resolvedTheme === 'dark' ? '切换浅色模式' : '切换深色模式'}
     >
       {resolvedTheme === 'dark' ? (
         <Sun className='w-full h-full' />

@@ -92,14 +92,14 @@ function LoginPageClient() {
   };
 
   return (
-    <div className='relative min-h-screen flex items-center justify-center px-4 overflow-hidden'>
+    <div className='tv-login relative min-h-screen flex items-center justify-center px-4 overflow-hidden'>
       <div className='absolute top-4 right-4'>
         <ThemeToggle />
       </div>
-      <div className='relative z-10 w-full max-w-md rounded-3xl glass-card dark:glass-card-dark shadow-large p-10'>
+      <div className='tv-login-panel relative z-10 w-full max-w-md p-8 sm:p-10'>
         {/* Logo Section */}
         <div className='flex flex-col items-center mb-8'>
-          <div className='relative w-24 h-24 mb-4'>
+          <div className='relative w-16 h-16 mb-4'>
             <Image
               src='/logo.png'
               alt={siteName}
@@ -108,9 +108,7 @@ function LoginPageClient() {
               priority
             />
           </div>
-          <h1 className='text-2xl font-bold gradient-text text-center'>
-            {siteName}
-          </h1>
+          <h1 className='text-2xl font-semibold text-center'>{siteName}</h1>
         </div>
 
         <form onSubmit={handleSubmit} className='space-y-8'>

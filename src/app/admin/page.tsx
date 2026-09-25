@@ -23,6 +23,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, ChevronUp, Settings, Users, Video } from 'lucide-react';
 import { GripVertical } from 'lucide-react';
+import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 
@@ -81,7 +82,7 @@ const CollapsibleTab = ({
   children,
 }: CollapsibleTabProps) => {
   return (
-    <div className='rounded-xl shadow-sm mb-4 overflow-hidden bg-white/80 backdrop-blur-md dark:bg-gray-800/50 dark:ring-1 dark:ring-gray-700'>
+    <div className='tv-admin-group mb-4 overflow-hidden'>
       <button
         onClick={onToggle}
         className='w-full px-6 py-4 flex items-center justify-between bg-gray-50/70 dark:bg-gray-800/60 hover:bg-gray-100/80 dark:hover:bg-gray-700/60 transition-colors'
@@ -1265,9 +1266,9 @@ function AdminPageClient() {
       const data = (await response.json()) as AdminConfigResult;
       setConfig(data.Config);
       setRole(data.Role);
+      setError(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '获取配置失败';
-      showError(msg);
       setError(msg);
     } finally {
       if (showLoading) {
@@ -1315,7 +1316,7 @@ function AdminPageClient() {
   if (loading) {
     return (
       <PageLayout activePath='/admin'>
-        <div className='px-2 sm:px-10 py-4 sm:py-8'>
+        <div className='tv-admin px-4 py-5 sm:px-10 sm:py-8'>
           <div className='max-w-[95%] mx-auto'>
             <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8'>
               管理员设置
@@ -1335,13 +1336,40 @@ function AdminPageClient() {
   }
 
   if (error) {
-    // 错误已通过 SweetAlert2 展示，此处直接返回空
-    return null;
+    return (
+      <PageLayout activePath='/admin'>
+        <div className='tv-admin px-4 py-8 sm:px-10 sm:py-12'>
+          <h1 className='text-2xl font-semibold'>管理员设置</h1>
+          <div
+            role='alert'
+            className='mt-8 max-w-xl border-t border-[color:var(--tv-line)] pt-7'
+          >
+            <h2 className='text-lg font-semibold'>无法加载配置</h2>
+            <p className='mt-2 text-sm text-[color:var(--tv-muted)]'>{error}</p>
+            <div className='mt-6 flex flex-wrap gap-3'>
+              <button
+                type='button'
+                onClick={() => fetchConfig(true)}
+                className='tv-admin-retry rounded-md px-5 py-2.5 text-sm font-semibold'
+              >
+                重新尝试
+              </button>
+              <Link
+                href='/'
+                className='rounded-md border border-[color:var(--tv-line)] px-5 py-2.5 text-sm font-semibold'
+              >
+                返回首页
+              </Link>
+            </div>
+          </div>
+        </div>
+      </PageLayout>
+    );
   }
 
   return (
     <PageLayout activePath='/admin'>
-      <div className='px-2 sm:px-10 py-4 sm:py-8'>
+      <div className='tv-admin px-4 py-5 sm:px-10 sm:py-8'>
         <div className='max-w-[95%] mx-auto'>
           {/* 标题 + 重置配置按钮 */}
           <div className='flex items-center gap-2 mb-8'>

@@ -221,68 +221,73 @@ export default function VideoCard({
   );
 
   // 处理点击事件
-  const handleClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      if (from === 'douban' && douban_id) {
-        // Douban cards go directly to play page, which will search for sources
-        router.push(
-          `/play?title=${encodeURIComponent(
-            actualTitle
-          )}&year=${encodeURIComponent(year || '')}`
-        );
-      } else if (from === 'search' && isAggregate && items) {
-        const params = new URLSearchParams();
-        if (query) params.set('q', query);
+  const handleClick = useCallback(() => {
+    if (from === 'douban' && douban_id) {
+      // Douban cards go directly to play page, which will search for sources
+      router.push(
+        `/play?title=${encodeURIComponent(
+          actualTitle
+        )}&year=${encodeURIComponent(year || '')}`
+      );
+    } else if (from === 'search' && isAggregate && items) {
+      const params = new URLSearchParams();
+      if (query) params.set('q', query);
 
-        const itemsKey = savePlayItemsHandoff(items);
-        if (itemsKey) {
-          params.set('itemsKey', itemsKey);
-        } else {
-          params.set('items', JSON.stringify(items));
-        }
-
-        router.push(`/play?${params.toString()}`);
-      } else if (source && id) {
-        router.push(
-          `/play?source=${source}&id=${id}&title=${encodeURIComponent(
-            actualTitle
-          )}`
-        );
+      const itemsKey = savePlayItemsHandoff(items);
+      if (itemsKey) {
+        params.set('itemsKey', itemsKey);
+      } else {
+        params.set('items', JSON.stringify(items));
       }
-    },
-    [
-      from,
-      douban_id,
-      actualTitle,
-      year,
-      isAggregate,
-      items,
-      query,
-      source,
-      id,
-      router,
-    ]
-  );
+
+      router.push(`/play?${params.toString()}`);
+    } else if (source && id) {
+      router.push(
+        `/play?source=${source}&id=${id}&title=${encodeURIComponent(
+          actualTitle
+        )}`
+      );
+    }
+  }, [
+    from,
+    douban_id,
+    actualTitle,
+    year,
+    isAggregate,
+    items,
+    query,
+    source,
+    id,
+    router,
+  ]);
 
   return (
     <div
-      className='group relative w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-lg transition-all duration-300 ease-out hover:z-10 hover:-translate-y-1'
+      role='link'
+      tabIndex={0}
+      aria-label={`查看${actualTitle}的片源`}
+      className='tv-video-card group relative w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl transition-all duration-200 ease-out hover:z-10 focus-visible:z-10'
       onClick={handleClick}
+      onKeyDown={(event) => {
+        if (event.target === event.currentTarget && event.key === 'Enter') {
+          event.preventDefault();
+          handleClick();
+        }
+      }}
       style={{
         touchAction: 'manipulation',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
       {/* 海报容器 */}
-      <div className='relative aspect-[2/3] w-full flex-shrink-0 overflow-hidden rounded-lg border border-slate-200/70 bg-slate-200 shadow-soft transition-all duration-300 group-hover:border-brand-300/70 group-hover:shadow-large dark:border-white/10 dark:bg-slate-900 dark:group-hover:border-brand-400/60'>
+      <div className='tv-video-poster relative aspect-[2/3] w-full flex-shrink-0 overflow-hidden rounded-2xl bg-slate-200 transition-all duration-300 dark:bg-slate-900'>
         {/* 海报图片 - 使用新的图片缓存系统 */}
         <Image
           key={`${actualPoster}-${retryCount}`}
           src={processImageUrlWithCache(actualPoster, douban_id)}
           alt={actualTitle}
           fill
-          className='rounded-lg object-cover transition-transform duration-700 group-hover:scale-105'
+          className='object-cover transition-transform duration-500 group-hover:scale-[1.03]'
           sizes='(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw'
           priority={false}
           onError={() => {
@@ -295,7 +300,7 @@ export default function VideoCard({
 
         {/* 图片加载失败时的占位符 */}
         {imageError && (
-          <div className='absolute inset-0 flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800'>
+          <div className='absolute inset-0 flex items-center justify-center rounded-2xl bg-slate-200 dark:bg-slate-800'>
             <div className='text-center'>
               <div className='mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-slate-500 dark:bg-white/10 dark:text-slate-300'>
                 <PlayCircleIcon className='h-5 w-5' />
@@ -319,21 +324,24 @@ export default function VideoCard({
         )}
 
         {/* 悬停遮罩 - Netflix style - 移动端不显示 */}
-        <div className='absolute inset-0 hidden bg-gradient-to-t from-black/88 via-black/26 to-transparent opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 md:block' />
+        <div className='absolute inset-0 hidden bg-gradient-to-t from-black/88 via-black/26 to-transparent opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-within:opacity-100 md:block' />
 
-        {/* 播放按钮 - 移动端始终显示，桌面端悬停显示 */}
-        <div className='absolute inset-0 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 ease-out'>
+        {/* 悬停或键盘聚焦时显示播放提示 */}
+        <div className='absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-within:opacity-100'>
           <div className='scale-90 rounded-full bg-white/80 p-4 shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover:scale-100 md:bg-white/95 md:p-3'>
             <PlayCircleIcon className='h-12 w-12 text-slate-950 md:h-8 md:w-8' />
           </div>
         </div>
 
         {/* 操作按钮 - 桌面端显示，移动端隐藏 */}
-        <div className='absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-out hidden md:flex'>
+        <div className='absolute top-2 right-2 hidden flex-col gap-2 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-within:opacity-100 md:flex'>
           {/* 收藏按钮 */}
           <button
             onClick={handleFavoriteToggle}
             disabled={isLoading}
+            aria-label={
+              favorited ? `取消收藏${actualTitle}` : `收藏${actualTitle}`
+            }
             className='flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-black/70 p-2 text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-black/90'
           >
             {isLoading ? (
@@ -350,6 +358,7 @@ export default function VideoCard({
             <button
               onClick={handleDeletePlayRecord}
               disabled={isLoading}
+              aria-label={`删除${actualTitle}的播放记录`}
               className='flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-black/70 p-2 text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-black/90'
             >
               {isLoading ? (
@@ -365,6 +374,7 @@ export default function VideoCard({
             <button
               onClick={handleFavoriteToggle}
               disabled={isLoading}
+              aria-label={`取消收藏${actualTitle}`}
               className='flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-black/70 p-2 text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-black/90'
             >
               {isLoading ? (
@@ -423,7 +433,7 @@ export default function VideoCard({
 
       {/* 标题 */}
       <div className='mt-2 px-1'>
-        <h3 className='line-clamp-2 text-sm font-medium leading-snug text-slate-900 transition-colors duration-300 group-hover:text-brand-700 dark:text-slate-100 dark:group-hover:text-brand-300'>
+        <h3 className='line-clamp-2 text-sm font-medium leading-snug text-slate-900 transition-colors duration-300 dark:text-slate-100'>
           {actualTitle}
         </h3>
       </div>

@@ -15,42 +15,30 @@ interface MobileHeaderProps {
 const MobileHeader = ({ showBackButton = false }: MobileHeaderProps) => {
   const { siteName } = useSite();
   return (
-    <header className='md:hidden sticky top-0 z-[550] w-full border-b border-slate-200/70 bg-white/85 shadow-soft backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80'>
-      <div className='h-14 flex items-center justify-between px-4'>
-        {/* 左侧：返回按钮和设置按钮 */}
-        <div className='flex items-center gap-3'>
+    <header className='tv-mobile-header md:hidden sticky top-0 z-[550] w-full'>
+      <div className='flex h-14 items-center justify-between gap-3 px-4'>
+        <div className='flex min-w-0 items-center gap-2'>
           {showBackButton && <BackButton />}
+          <Link
+            href='/'
+            className='group flex min-w-0 items-center gap-2 transition-opacity duration-300 hover:opacity-80'
+          >
+            <span className='relative h-8 w-8 flex-none'>
+              <Image
+                src='/logo.png'
+                alt=''
+                fill
+                className='object-contain transition-transform duration-300 group-hover:scale-110'
+              />
+            </span>
+            <span className='truncate text-lg font-semibold'>{siteName}</span>
+          </Link>
         </div>
 
-        {/* 右侧按钮 */}
-        <div className='flex items-center gap-3'>
+        <div className='flex flex-none items-center gap-3'>
           <ThemeToggle />
           <UserMenu />
         </div>
-      </div>
-
-      {/* 中间：Logo（绝对居中） */}
-      <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-        <Link
-          href='/'
-          className='flex items-center gap-2 hover:opacity-80 transition-all duration-300 group'
-        >
-          {/* Logo Image */}
-          <div className='relative w-8 h-8'>
-            <Image
-              src='/logo.png'
-              alt={siteName}
-              fill
-              className='object-contain transition-transform duration-300 group-hover:scale-110'
-            />
-          </div>
-          {/* Site Name */}
-          <div className='relative'>
-            <span className='text-lg font-semibold gradient-text'>
-              {siteName}
-            </span>
-          </div>
-        </Link>
       </div>
     </header>
   );

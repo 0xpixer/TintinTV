@@ -55,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#06b6d4',
+  themeColor: '#101114',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -181,7 +181,7 @@ export default async function RootLayout({
         />
 
         {/* Android Specific */}
-        <meta name='theme-color' content='#06b6d4' />
+        <meta name='theme-color' content='#101114' />
         <meta name='msapplication-TileColor' content='#06b6d4' />
 
         {/* 将配置序列化后直接写入脚本，浏览器端可通过 window.RUNTIME_CONFIG 获取 */}
@@ -272,7 +272,7 @@ export default async function RootLayout({
       >
         <ThemeProvider
           attribute='class'
-          defaultTheme='system'
+          defaultTheme='dark'
           enableSystem
           disableTransitionOnChange
         >

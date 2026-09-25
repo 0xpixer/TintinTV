@@ -1,7 +1,16 @@
 /* eslint-disable react-hooks/exhaustive-deps, @typescript-eslint/no-explicit-any */
 'use client';
 
-import { ChevronUp, Search, X } from 'lucide-react';
+import {
+  ChevronRight,
+  ChevronUp,
+  Clover,
+  Film,
+  Search,
+  Tv,
+  X,
+} from 'lucide-react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Suspense,
@@ -198,12 +207,12 @@ function SearchPageClient() {
 
   return (
     <PageLayout activePath='/search'>
-      <div className='px-4 py-5 sm:px-10 sm:py-8 overflow-visible mb-10'>
+      <div className='tv-search overflow-visible mb-10'>
         {/* 搜索框 */}
         <div className='mb-8'>
-          <div className='mx-auto mb-6 max-w-3xl text-center'>
-            <h1 className='text-3xl font-semibold text-slate-950 sm:text-5xl dark:text-white'>
-              找到今晚想看的
+          <div className='mx-auto mb-6 max-w-3xl'>
+            <h1 className='text-2xl font-semibold text-slate-950 sm:text-3xl dark:text-white'>
+              搜索影片
             </h1>
             <p className='mt-3 text-sm text-slate-500 dark:text-slate-400'>
               聚合多个来源，优先展示更容易播放的结果。
@@ -233,7 +242,7 @@ function SearchPageClient() {
         </div>
 
         {/* 搜索结果或搜索历史 */}
-        <div className='max-w-[95%] mx-auto mt-12 overflow-visible'>
+        <div className='mt-12 overflow-visible'>
           {isLoading ? (
             <div className='flex justify-center items-center h-40'>
               <div className='h-8 w-8 animate-spin rounded-full border-b-2 border-brand-500'></div>
@@ -360,7 +369,30 @@ function SearchPageClient() {
                 ))}
               </div>
             </section>
-          ) : null}
+          ) : (
+            <section className='mx-auto max-w-3xl border-t border-slate-200 pt-6 dark:border-white/10'>
+              <h2 className='mb-4 text-sm font-semibold text-slate-600 dark:text-slate-300'>
+                浏览热门内容
+              </h2>
+              <div className='grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-3'>
+                {[
+                  { href: '/douban?type=movie', label: '电影', icon: Film },
+                  { href: '/douban?type=tv', label: '剧集', icon: Tv },
+                  { href: '/douban?type=show', label: '综艺', icon: Clover },
+                ].map(({ href, label, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className='inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-sm font-medium text-slate-700 transition-colors hover:border-brand-400 hover:text-slate-950 sm:gap-2 sm:px-4 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:border-brand-400'
+                  >
+                    <Icon className='h-4 w-4' />
+                    {label}
+                    <ChevronRight className='h-4 w-4 text-slate-400' />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
 
