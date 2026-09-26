@@ -1,6 +1,6 @@
 'use client';
 
-import { Clover, Film, Heart, Home, Search, Tv } from 'lucide-react';
+import { Clover, Film, Heart, Home, Search, Sparkles, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -29,6 +29,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
       label: '剧集',
       href: '/douban?type=tv',
     },
+    { icon: Sparkles, label: '动画', href: '/animation' },
     {
       icon: Clover,
       label: '综艺',
@@ -65,7 +66,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
         {navItems.map((item) => {
           const active = isActive(item.href);
           return (
-            <li key={item.href} className='flex-shrink-0 w-1/6'>
+            <li key={item.href} className='min-w-0 flex-1'>
               <Link
                 href={item.href}
                 aria-current={active ? 'page' : undefined}

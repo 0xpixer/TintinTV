@@ -109,7 +109,12 @@ export async function GET(request: Request) {
       list: list,
     };
 
-    const cacheTime = await getCacheTime();
+    let cacheTime = 7200;
+    try {
+      cacheTime = await getCacheTime();
+    } catch {
+      // Keep the movie list available when storage is temporarily unavailable.
+    }
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': `public, max-age=${cacheTime}`,

@@ -1,6 +1,14 @@
 'use client';
 
-import { Clapperboard, Film, Heart, Home, Search, Tv } from 'lucide-react';
+import {
+  Clapperboard,
+  Film,
+  Heart,
+  Home,
+  Search,
+  Sparkles,
+  Tv,
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -17,6 +25,7 @@ const primaryItems = [
   { href: '/', label: '首页', icon: Home },
   { href: '/douban?type=movie', label: '电影', icon: Film },
   { href: '/douban?type=tv', label: '剧集', icon: Tv },
+  { href: '/animation', label: '动画', icon: Sparkles },
   { href: '/douban?type=show', label: '综艺', icon: Clapperboard },
 ];
 const quickItems = [
