@@ -63,6 +63,7 @@ export default function VideoCard({
   const [favorited, setFavorited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [useOriginalImage, setUseOriginalImage] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
   const isAggregate = from === 'search' && !!items?.length;
@@ -109,6 +110,7 @@ export default function VideoCard({
   const handleImageRetry = () => {
     if (retryCount < 2) {
       setRetryCount((prev) => prev + 1);
+      setUseOriginalImage(false);
       setImageError(false);
     }
   };
@@ -116,6 +118,7 @@ export default function VideoCard({
   // 当海报URL改变时重置错误状态
   useEffect(() => {
     setImageError(false);
+    setUseOriginalImage(false);
     setRetryCount(0);
   }, [actualPoster]);
 
@@ -283,17 +286,27 @@ export default function VideoCard({
       <div className='tv-video-poster relative aspect-[2/3] w-full flex-shrink-0 overflow-hidden rounded-2xl bg-slate-200 transition-all duration-300 dark:bg-slate-900'>
         {/* 海报图片 - 使用新的图片缓存系统 */}
         <Image
-          key={`${actualPoster}-${retryCount}`}
-          src={processImageUrlWithCache(actualPoster, douban_id)}
+          key={`${actualPoster}-${retryCount}-${useOriginalImage}`}
+          src={
+            useOriginalImage
+              ? actualPoster
+              : processImageUrlWithCache(actualPoster, douban_id)
+          }
           alt={actualTitle}
           fill
           className='object-cover transition-transform duration-500 group-hover:scale-[1.03]'
           sizes='(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw'
           priority={false}
           onError={() => {
-            setImageError(true);
+            if (useOriginalImage) setImageError(true);
+            else setUseOriginalImage(true);
           }}
-          onLoad={() => {
+          onLoad={(event) => {
+            if (event.currentTarget.naturalWidth <= 1) {
+              if (useOriginalImage) setImageError(true);
+              else setUseOriginalImage(true);
+              return;
+            }
             setImageError(false);
           }}
         />

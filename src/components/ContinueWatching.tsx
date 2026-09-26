@@ -1,9 +1,10 @@
 /* eslint-disable no-console */
 'use client';
 
+import { ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   type PlayRecord,
@@ -21,6 +22,49 @@ interface ContinueWatchingProps {
   placement?: 'section' | 'hero';
 }
 
+function ResumeThumbnail({ src, title }: { src: string; title: string }) {
+  const [useOriginal, setUseOriginal] = useState(false);
+  const [unavailable, setUnavailable] = useState(!src);
+
+  useEffect(() => {
+    setUseOriginal(false);
+    setUnavailable(!src);
+  }, [src]);
+
+  const handleLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    if (event.currentTarget.naturalWidth > 1) return;
+    if (useOriginal) setUnavailable(true);
+    else setUseOriginal(true);
+  };
+
+  const handleError = () => {
+    if (useOriginal) setUnavailable(true);
+    else setUseOriginal(true);
+  };
+
+  return (
+    <div className='tv-hero-resume-poster relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-white/10'>
+      {unavailable ? (
+        <div className='flex h-full items-center justify-center text-white/55'>
+          <ImageOff className='h-6 w-6' aria-hidden='true' />
+          <span className='sr-only'>{title} 图片暂不可用</span>
+        </div>
+      ) : (
+        <Image
+          src={useOriginal ? src : processImageUrlWithCache(src)}
+          alt=''
+          fill
+          unoptimized
+          sizes='(max-width: 1200px) 150px, 180px'
+          className='object-cover'
+          onLoad={handleLoad}
+          onError={handleError}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function ContinueWatching({
   className,
   placement = 'section',
@@ -29,6 +73,9 @@ export default function ContinueWatching({
     (PlayRecord & { key: string })[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const resumeTrackRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   // 处理播放记录数据更新的函数
   const updatePlayRecords = (allRecords: Record<string, PlayRecord>) => {
@@ -55,6 +102,15 @@ export default function ContinueWatching({
     const [source, id] = key.split('+');
     return { source, id };
   };
+
+  const updateResumeScroll = useCallback(() => {
+    const track = resumeTrackRef.current;
+    if (!track) return;
+    setCanScrollLeft(track.scrollLeft > 2);
+    setCanScrollRight(
+      track.scrollLeft + track.clientWidth < track.scrollWidth - 2
+    );
+  }, []);
 
   useEffect(() => {
     const fetchPlayRecords = async () => {
@@ -85,6 +141,19 @@ export default function ContinueWatching({
     return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    const track = resumeTrackRef.current;
+    if (!track) return;
+    updateResumeScroll();
+    track.addEventListener('scroll', updateResumeScroll, { passive: true });
+    const observer = new ResizeObserver(updateResumeScroll);
+    observer.observe(track);
+    return () => {
+      track.removeEventListener('scroll', updateResumeScroll);
+      observer.disconnect();
+    };
+  }, [loading, playRecords.length, updateResumeScroll]);
+
   // 如果没有播放记录，则不渲染组件
   if (!loading && playRecords.length === 0) {
     return null;
@@ -100,20 +169,52 @@ export default function ContinueWatching({
           <h2 className='text-sm font-semibold tracking-wide text-white/90'>
             继续观看
           </h2>
-          <span className='text-xs text-white/55'>最近播放</span>
+          <div className='flex items-center gap-2'>
+            <span className='mr-1 text-xs text-white/55'>最近播放</span>
+            {(canScrollLeft || canScrollRight) && (
+              <>
+                <button
+                  type='button'
+                  aria-label='向左滚动继续观看'
+                  disabled={!canScrollLeft}
+                  onClick={() =>
+                    resumeTrackRef.current?.scrollBy({
+                      left: -220,
+                      behavior: 'smooth',
+                    })
+                  }
+                  className='tv-glass-icon-button'
+                >
+                  <ChevronLeft className='h-4 w-4' aria-hidden='true' />
+                </button>
+                <button
+                  type='button'
+                  aria-label='向右滚动继续观看'
+                  disabled={!canScrollRight}
+                  onClick={() =>
+                    resumeTrackRef.current?.scrollBy({
+                      left: 220,
+                      behavior: 'smooth',
+                    })
+                  }
+                  className='tv-glass-icon-button'
+                >
+                  <ChevronRight className='h-4 w-4' aria-hidden='true' />
+                </button>
+              </>
+            )}
+          </div>
         </div>
-        <div className='space-y-3'>
+        <div ref={resumeTrackRef} className='tv-hero-resume-track'>
           {loading
             ? Array.from({ length: 2 }).map((_, index) => (
-                <div key={index} className='flex animate-pulse gap-3'>
-                  <div className='h-[62px] w-[110px] shrink-0 rounded-lg bg-white/15' />
-                  <div className='flex-1 space-y-2 py-2'>
-                    <div className='h-3 w-4/5 rounded bg-white/15' />
-                    <div className='h-2 w-2/5 rounded bg-white/10' />
-                  </div>
+                <div key={index} className='w-[148px] shrink-0 animate-pulse'>
+                  <div className='aspect-[16/10] rounded-xl bg-white/15' />
+                  <div className='mt-2 h-3 w-4/5 rounded bg-white/15' />
+                  <div className='mt-2 h-2 w-2/5 rounded bg-white/10'></div>
                 </div>
               ))
-            : playRecords.slice(0, 3).map((record) => {
+            : playRecords.map((record) => {
                 const { source, id } = parseKey(record.key);
                 const progress = Math.min(
                   100,
@@ -129,28 +230,25 @@ export default function ContinueWatching({
                   <Link
                     key={record.key}
                     href={href}
-                    className='tv-hero-resume-item group flex min-w-0 gap-3 rounded-lg p-2 transition-colors hover:bg-white/10'
+                    className='tv-hero-resume-item group w-[148px] shrink-0 rounded-xl p-1 transition-colors'
                   >
-                    <div className='relative h-[62px] w-[110px] shrink-0 overflow-hidden rounded-md bg-white/10'>
-                      <Image
-                        src={processImageUrlWithCache(record.cover, record.key)}
-                        alt=''
-                        fill
-                        sizes='110px'
-                        className='object-cover'
+                    <div className='relative'>
+                      <ResumeThumbnail
+                        src={record.cover}
+                        title={record.title}
                       />
-                      <div className='absolute inset-x-0 bottom-0 h-1 bg-white/30'>
+                      <div className='absolute inset-x-0 bottom-0 h-1 overflow-hidden rounded-b-xl bg-white/35'>
                         <div
-                          className='h-full bg-brand-400'
+                          className='h-full bg-white'
                           style={{ width: `${progress}%` }}
                         />
                       </div>
                     </div>
-                    <div className='flex min-w-0 flex-1 flex-col justify-center'>
-                      <span className='truncate text-sm font-medium text-white/90 group-hover:text-white'>
+                    <div className='mt-2 min-w-0'>
+                      <span className='block truncate text-sm font-medium text-white/90 group-hover:text-white'>
                         {record.title}
                       </span>
-                      <span className='mt-1 truncate text-xs text-white/55'>
+                      <span className='mt-1 block truncate text-xs text-white/55'>
                         {record.source_name}
                         {record.total_episodes > 1 &&
                           ` · 第 ${record.index} 集`}

@@ -33,16 +33,17 @@ export default function Sidebar({ activePath }: SidebarProps) {
   return (
     <header className='tv-desktop-nav hidden md:flex'>
       <Link href='/' className='tv-brand' aria-label={`${siteName} 首页`}>
-        <span className='tv-brand-mark'>
+        <span className='tv-brand-wordmark'>
           <Image
-            src='/logo.png'
-            alt=''
-            fill
-            className='object-contain'
-            sizes='36px'
+            src='/TINTINTV%20LOGO%20WHITE.png'
+            alt={siteName}
+            width={150}
+            height={41}
+            priority
+            className='h-auto w-full object-contain'
+            sizes='150px'
           />
         </span>
-        <span>{siteName}</span>
       </Link>
       <nav className='tv-nav-links' aria-label='主要导航'>
         {items.map(({ href, label, icon: Icon }) => {

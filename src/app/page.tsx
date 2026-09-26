@@ -258,17 +258,6 @@ function HomeClient() {
                         {heroOverview}
                       </p>
                     )}
-                    <div className='mt-6 flex flex-wrap gap-3'>
-                      <Link
-                        href={`/play?title=${encodeURIComponent(
-                          heroItem.title
-                        )}&year=${encodeURIComponent(heroItem.year || '')}`}
-                        className='inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-brand-100'
-                      >
-                        <Play className='h-4 w-4 fill-current' />
-                        立即播放
-                      </Link>
-                    </div>
                   </div>
                   {heroBackdrop && (
                     <p className='mt-3 max-w-2xl text-xs leading-5 text-white/60'>
@@ -305,7 +294,7 @@ function HomeClient() {
                   heroItem.title
                 )}&year=${encodeURIComponent(heroItem.year || '')}`}
                 aria-label={`播放 ${heroItem.title}`}
-                className='tv-hero-play absolute left-1/2 top-1/2 z-10 flex h-[76px] w-[76px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-black/30 text-white shadow-xl backdrop-blur-sm transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white'
+                className='tv-hero-play absolute left-1/2 top-1/2 z-10 flex h-[76px] w-[76px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/55 bg-white/20 text-white transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white'
               >
                 <Play className='ml-1 h-7 w-7 fill-current' />
               </Link>

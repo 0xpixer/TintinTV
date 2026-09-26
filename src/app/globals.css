@@ -467,8 +467,10 @@ html.dark body {
 .tv-app-home .tv-desktop-nav {
   position: absolute;
   inset: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   border-bottom-color: transparent;
-  background: linear-gradient(180deg, rgba(8, 9, 11, 0.68), transparent);
+  background: transparent;
   backdrop-filter: none;
 }
 
@@ -483,10 +485,17 @@ html.dark body {
   white-space: nowrap;
 }
 
-.tv-brand-mark {
+.tv-app-home .tv-brand {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+}
+
+.tv-brand-wordmark {
   position: relative;
-  height: 36px;
-  width: 36px;
+  display: block;
+  width: 150px;
+  line-height: 0;
 }
 
 .tv-nav-links,
@@ -509,6 +518,15 @@ html.dark body {
   gap: 5px;
   margin-left: auto;
 }
+.tv-app-home .tv-nav-actions {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+.tv-app-home .tv-nav-links {
+  grid-column: 1;
+  grid-row: 1;
+}
 
 .tv-nav-link {
   display: inline-flex;
@@ -516,23 +534,66 @@ html.dark body {
   min-height: 44px;
   align-items: center;
   gap: 9px;
-  border-radius: 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
   padding: 0 15px;
-  color: var(--tv-muted);
+  color: #fff;
   font-size: 14px;
   font-weight: 600;
-  transition: color 160ms ease, background 160ms ease;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+  transition: color 180ms ease, background 180ms ease, border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .tv-nav-link:hover,
 .tv-nav-link:focus-visible {
-  color: var(--tv-text);
-  background: var(--tv-surface-raised);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 8px 28px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(24px) saturate(180%);
 }
 
 .tv-nav-link[aria-current='page'] {
-  color: var(--tv-text);
-  background: var(--tv-surface-raised);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 6px 22px rgba(0, 0, 0, 0.13);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+.tv-glass-icon-button {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(22px) saturate(180%);
+  transition: background 160ms ease, opacity 160ms ease, transform 160ms ease;
+}
+.tv-glass-icon-button:not(:disabled):hover {
+  transform: scale(1.06);
+  background: rgba(255, 255, 255, 0.25);
+}
+.tv-glass-icon-button:disabled {
+  opacity: 0.42;
+}
+.tv-desktop-nav .tv-brand,
+.tv-desktop-nav .tv-nav-actions,
+.tv-desktop-nav .tv-nav-actions button {
+  color: #fff;
+}
+.tv-app-home .tv-desktop-nav .tv-brand,
+.tv-app-home .tv-desktop-nav .tv-nav-actions,
+.tv-app-home .tv-desktop-nav .tv-nav-actions button {
+  color: #fff;
+  filter: drop-shadow(0 1px 8px rgba(0, 0, 0, 0.4));
 }
 
 .tv-mobile-header,
@@ -591,7 +652,7 @@ html.dark body {
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  filter: saturate(1.05) brightness(0.72);
+  filter: saturate(1.05) brightness(0.96);
 }
 
 .tv-hero-backdrop {
@@ -605,18 +666,12 @@ html.dark body {
 .tv-hero-scrim {
   z-index: -1;
   background: linear-gradient(
-      90deg,
-      rgba(9, 10, 12, 0.87) 0%,
-      rgba(9, 10, 12, 0.68) 27%,
-      rgba(9, 10, 12, 0.08) 57%,
-      rgba(9, 10, 12, 0.58) 100%
-    ),
-    linear-gradient(
-      0deg,
-      rgba(9, 10, 12, 0.6),
-      transparent 55%,
-      rgba(9, 10, 12, 0.16)
-    );
+    180deg,
+    rgba(255, 255, 255, 0.11),
+    transparent 24%,
+    transparent 78%,
+    rgba(255, 255, 255, 0.09)
+  );
 }
 
 .tv-hero-content {
@@ -629,26 +684,52 @@ html.dark body {
 }
 .tv-hero-copy {
   max-width: 620px;
+  padding: clamp(20px, 2vw, 32px);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 18px 60px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(22px) saturate(145%);
 }
 .tv-hero-resume {
   position: absolute;
-  right: clamp(32px, 5vw, 90px);
+  right: clamp(30px, 4vw, 72px);
   top: 50%;
-  width: min(310px, 24vw);
-  max-height: 55vh;
-  overflow: auto;
-  transform: translateY(-35%);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  width: min(500px, 36vw);
+  transform: translateY(-50%);
 }
-.tv-hero-resume-item img {
+.tv-hero-resume-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 2px 2px 8px;
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+}
+.tv-hero-resume-track::-webkit-scrollbar {
+  display: none;
+}
+.tv-hero-resume-item {
+  scroll-snap-align: start;
+}
+.tv-hero-resume-item:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+.tv-hero-resume-poster img {
   transition: transform 300ms ease;
 }
-.tv-hero-resume-item:hover img {
+.tv-hero-resume-item:hover .tv-hero-resume-poster img {
   transform: scale(1.06);
 }
 .tv-hero-play {
   top: 46%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 14px 36px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(24px) saturate(180%);
 }
 
 .tv-hero h1 {
@@ -657,10 +738,6 @@ html.dark body {
   font-weight: 720;
   max-width: 11ch;
   text-wrap: balance;
-}
-
-.tv-hero a {
-  border-radius: 6px;
 }
 
 .tv-home section:not(.tv-hero) {
@@ -961,6 +1038,7 @@ html.dark body {
   }
   .tv-app-home .tv-desktop-nav {
     position: sticky;
+    display: flex;
     background: color-mix(in srgb, var(--tv-bg) 93%, transparent);
   }
   .tv-app-home .tv-hero {
@@ -984,6 +1062,9 @@ html.dark body {
     padding: 26px;
     inset: auto 0 0;
     width: auto;
+  }
+  .tv-hero-copy {
+    padding: 20px;
   }
   .tv-hero-play {
     display: none;
