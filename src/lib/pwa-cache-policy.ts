@@ -13,7 +13,7 @@ export function getCacheStrategyForRequest(
     return 'network-only';
   }
 
-  if (url.pathname === '/' || url.pathname.startsWith('/_next/')) {
+  if (url.pathname.startsWith('/_next/') || !/\.[^/]+$/.test(url.pathname)) {
     return 'network-first';
   }
 

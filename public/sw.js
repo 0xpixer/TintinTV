@@ -1,11 +1,9 @@
 // Simple PWA Service Worker for TintinTV
-const CACHE_NAME = 'tintintv-v1';
-const STATIC_CACHE = 'tintintv-static-v1';
-const DYNAMIC_CACHE = 'tintintv-dynamic-v1';
+const STATIC_CACHE = 'tintintv-static-v2';
+const DYNAMIC_CACHE = 'tintintv-dynamic-v2';
 
 // Files to cache immediately
 const STATIC_FILES = [
-  '/',
   '/manifest.json',
   '/favicon.ico',
   '/logo.png',
@@ -19,7 +17,7 @@ function getCacheStrategyForRequest(request, url) {
   if (request.method !== 'GET') return null;
   if (!url.protocol.startsWith('http')) return null;
   if (url.pathname.startsWith('/api/')) return 'network-only';
-  if (url.pathname === '/' || url.pathname.startsWith('/_next/')) {
+  if (url.pathname.startsWith('/_next/') || !/\.[^/]+$/.test(url.pathname)) {
     return 'network-first';
   }
   if (url.pathname.match(/\.(jpg|jpeg|png|gif|svg|ico|webp)$/i)) {
