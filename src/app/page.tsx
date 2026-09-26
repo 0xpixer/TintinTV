@@ -76,6 +76,7 @@ function HomeClient() {
   const [loadingMovies, setLoadingMovies] = useState(true);
   const [loadingTvShows, setLoadingTvShows] = useState(true);
   const [loadingVarietyShows, setLoadingVarietyShows] = useState(true);
+  const [heroBackdrop, setHeroBackdrop] = useState('');
   const heroItem = hotMovies[0] ?? hotTvShows[0] ?? hotVarietyShows[0];
   const loading =
     !heroItem && (loadingMovies || loadingTvShows || loadingVarietyShows);
@@ -87,6 +88,35 @@ function HomeClient() {
   const heroPoster = heroItem
     ? processImageUrlWithCache(heroItem.poster, heroItem.id)
     : '';
+  const heroImage = heroBackdrop
+    ? processImageUrlWithCache(heroBackdrop)
+    : heroPoster;
+
+  useEffect(() => {
+    if (!heroItem) return;
+
+    let cancelled = false;
+    setHeroBackdrop('');
+
+    const params = new URLSearchParams({
+      title: heroItem.title,
+      year: heroItem.year || '',
+      type: hotMovies[0] ? 'movie' : 'tv',
+    });
+
+    fetch(`/api/tmdb/backdrop?${params}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { backdropUrl?: string | null } | null) => {
+        if (!cancelled && data?.backdropUrl) {
+          setHeroBackdrop(data.backdropUrl);
+        }
+      })
+      .catch((error) => console.error('获取主视觉背景图失败:', error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [heroItem?.id, heroItem?.title, heroItem?.year, hotMovies]);
 
   // Add debugging for PWA
   useEffect(() => {
@@ -181,12 +211,12 @@ function HomeClient() {
                 <div
                   aria-hidden='true'
                   className='tv-hero-backdrop absolute inset-0'
-                  style={{ backgroundImage: `url("${heroPoster}")` }}
+                  style={{ backgroundImage: `url("${heroImage}")` }}
                 />
                 <div
                   aria-hidden='true'
                   className='tv-hero-art absolute inset-0'
-                  style={{ backgroundImage: `url("${heroPoster}")` }}
+                  style={{ backgroundImage: `url("${heroImage}")` }}
                 />
               </>
             )}
@@ -225,6 +255,21 @@ function HomeClient() {
                       搜索其他影片
                     </Link>
                   </div>
+                  {heroBackdrop && (
+                    <p className='mt-3 max-w-2xl text-xs leading-5 text-white/60'>
+                      背景图片来自{' '}
+                      <a
+                        href='https://www.themoviedb.org/'
+                        target='_blank'
+                        rel='noreferrer'
+                        className='underline underline-offset-2'
+                      >
+                        TMDB
+                      </a>
+                      。This product uses the TMDB API but is not endorsed or
+                      certified by TMDB.
+                    </p>
+                  )}
                 </>
               ) : (
                 <>

@@ -17,7 +17,8 @@ function isAllowedImageUrl(value: string): boolean {
     return (
       url.protocol === 'https:' &&
       (url.hostname === 'doubanio.com' ||
-        url.hostname.endsWith('.doubanio.com'))
+        url.hostname.endsWith('.doubanio.com') ||
+        url.hostname === 'image.tmdb.org')
     );
   } catch {
     return false;
