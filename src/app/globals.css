@@ -897,6 +897,11 @@ html.dark body {
   .tv-player-frame [role='status'] {
     border-radius: 0;
   }
+  .tv-episode-panel {
+    width: calc(100% + 32px);
+    margin-inline: -16px;
+    border-radius: 0;
+  }
   .tv-hero {
     min-height: 490px;
   }
