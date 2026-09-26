@@ -26,6 +26,45 @@ interface ErrorBoundaryProps {
   children: React.ReactNode;
 }
 
+interface HomeCategoriesCache {
+  savedAt: number;
+  movies: DoubanItem[];
+  tvShows: DoubanItem[];
+  varietyShows: DoubanItem[];
+}
+
+const HOME_CATEGORIES_CACHE_KEY = 'tintintv_home_categories_v1';
+const HOME_CATEGORIES_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+
+function readHomeCategoriesCache(): HomeCategoriesCache | null {
+  try {
+    const value = localStorage.getItem(HOME_CATEGORIES_CACHE_KEY);
+    if (!value) return null;
+
+    const cache = JSON.parse(value) as HomeCategoriesCache;
+    if (
+      !cache.savedAt ||
+      Date.now() - cache.savedAt > HOME_CATEGORIES_CACHE_MAX_AGE ||
+      !Array.isArray(cache.movies) ||
+      !Array.isArray(cache.tvShows) ||
+      !Array.isArray(cache.varietyShows)
+    ) {
+      return null;
+    }
+    return cache;
+  } catch {
+    return null;
+  }
+}
+
+function writeHomeCategoriesCache(cache: HomeCategoriesCache) {
+  try {
+    localStorage.setItem(HOME_CATEGORIES_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // Continue with network results when browser storage is unavailable.
+  }
+}
+
 class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
@@ -175,40 +214,80 @@ function HomeClient() {
   }, [hotMovies.length, hotTvShows.length, loading]);
 
   useEffect(() => {
-    const fetchDoubanData = async () => {
-      try {
-        const requests = [
-          getDoubanCategories({
-            kind: 'movie',
-            category: '热门',
-            type: '全部',
-          })
-            .then((data) => {
-              if (data.code === 200) setHotMovies(data.list.slice(0, 12));
-            })
-            .catch((error) => console.error('获取热门电影失败:', error))
-            .finally(() => setLoadingMovies(false)),
-          getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' })
-            .then((data) => {
-              if (data.code === 200) setHotTvShows(data.list.slice(0, 12));
-            })
-            .catch((error) => console.error('获取热门剧集失败:', error))
-            .finally(() => setLoadingTvShows(false)),
-          getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' })
-            .then((data) => {
-              if (data.code === 200) setHotVarietyShows(data.list.slice(0, 12));
-            })
-            .catch((error) => console.error('获取热门综艺失败:', error))
-            .finally(() => setLoadingVarietyShows(false)),
-        ];
+    let active = true;
+    let cache = readHomeCategoriesCache() || {
+      savedAt: Date.now(),
+      movies: [],
+      tvShows: [],
+      varietyShows: [],
+    };
 
-        await Promise.all(requests);
+    if (cache.movies.length) {
+      setHotMovies(cache.movies);
+      setLoadingMovies(false);
+    }
+    if (cache.tvShows.length) {
+      setHotTvShows(cache.tvShows);
+      setLoadingTvShows(false);
+    }
+    if (cache.varietyShows.length) {
+      setHotVarietyShows(cache.varietyShows);
+      setLoadingVarietyShows(false);
+    }
+
+    const refreshCategory = async (
+      key: 'movies' | 'tvShows' | 'varietyShows',
+      request: Promise<{ code: number; list: DoubanItem[] }>,
+      setItems: React.Dispatch<React.SetStateAction<DoubanItem[]>>,
+      setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+      label: string
+    ) => {
+      try {
+        const data = await request;
+        if (!active || data.code !== 200) return;
+
+        const items = data.list.slice(0, 12);
+        setItems(items);
+        cache = { ...cache, savedAt: Date.now(), [key]: items };
+        writeHomeCategoriesCache(cache);
       } catch (error) {
-        console.error('获取豆瓣数据失败:', error);
+        console.error(`获取${label}失败:`, error);
+      } finally {
+        if (active) setLoading(false);
       }
     };
 
-    fetchDoubanData();
+    void Promise.all([
+      refreshCategory(
+        'movies',
+        getDoubanCategories({
+          kind: 'movie',
+          category: '热门',
+          type: '全部',
+        }),
+        setHotMovies,
+        setLoadingMovies,
+        '热门电影'
+      ),
+      refreshCategory(
+        'tvShows',
+        getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
+        setHotTvShows,
+        setLoadingTvShows,
+        '热门剧集'
+      ),
+      refreshCategory(
+        'varietyShows',
+        getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
+        setHotVarietyShows,
+        setLoadingVarietyShows,
+        '热门综艺'
+      ),
+    ]);
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (

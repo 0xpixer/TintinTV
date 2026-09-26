@@ -456,13 +456,15 @@ html.dark body {
   position: sticky;
   top: 0;
   z-index: 550;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   height: 76px;
   align-items: center;
-  gap: clamp(20px, 4vw, 72px);
+  gap: 0;
   padding: 0 clamp(24px, 3.5vw, 64px);
-  border-bottom: 1px solid var(--tv-line);
-  background: color-mix(in srgb, var(--tv-bg) 93%, transparent);
-  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(16, 17, 20, 0.68);
+  backdrop-filter: blur(24px) saturate(160%);
 }
 .tv-app-home .tv-desktop-nav {
   position: absolute;
@@ -479,7 +481,10 @@ html.dark body {
   flex: none;
   align-items: center;
   gap: 10px;
-  color: var(--tv-text);
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  color: #fff;
   font-size: 20px;
   font-weight: 720;
   white-space: nowrap;
@@ -505,6 +510,8 @@ html.dark body {
 }
 
 .tv-nav-links {
+  grid-column: 1;
+  grid-row: 1;
   gap: 6px;
   min-width: 0;
   flex: 1;
@@ -515,10 +522,14 @@ html.dark body {
   display: none;
 }
 .tv-nav-quick-links {
+  position: absolute;
+  left: calc(50% + 88px);
+  top: 50%;
   display: flex;
   flex: none;
   align-items: center;
   gap: 4px;
+  transform: translateY(-50%);
 }
 .tv-nav-quick-link {
   display: inline-flex;
@@ -542,6 +553,9 @@ html.dark body {
   backdrop-filter: blur(24px) saturate(180%);
 }
 .tv-nav-actions {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
   gap: 5px;
   margin-left: auto;
 }
@@ -551,13 +565,7 @@ html.dark body {
   justify-self: end;
 }
 .tv-app-home .tv-nav-quick-links {
-  position: absolute;
   left: calc(50% + 88px);
-  top: 50%;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transform: translateY(-50%);
 }
 .tv-app-home .tv-nav-links {
   grid-column: 1;
