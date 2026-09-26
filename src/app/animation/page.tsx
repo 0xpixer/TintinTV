@@ -169,7 +169,7 @@ function AnimationPageClient() {
     <PageLayout activePath='/animation'>
       <div className='tv-library overflow-visible'>
         <h1 className='mb-6 text-3xl font-semibold sm:mb-8 sm:text-5xl'>
-          动画
+          Anna动画屋
         </h1>
         <nav className='tv-filters' aria-label='动画分类'>
           <div className='inline-flex rounded-lg bg-white/10 p-1'>
