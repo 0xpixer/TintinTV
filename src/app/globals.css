@@ -464,6 +464,13 @@ html.dark body {
   background: color-mix(in srgb, var(--tv-bg) 93%, transparent);
   backdrop-filter: blur(18px);
 }
+.tv-app-home .tv-desktop-nav {
+  position: absolute;
+  inset: 0 0 auto;
+  border-bottom-color: transparent;
+  background: linear-gradient(180deg, rgba(8, 9, 11, 0.68), transparent);
+  backdrop-filter: none;
+}
 
 .tv-brand {
   display: inline-flex;
@@ -550,6 +557,16 @@ html.dark body {
   max-width: 1740px;
   padding: 28px clamp(20px, 3.5vw, 64px) 60px;
 }
+.tv-app-home .tv-main {
+  padding-bottom: 0;
+}
+.tv-app-home .tv-home {
+  max-width: none;
+  padding: 0 0 60px;
+}
+.tv-app-home .tv-home > div {
+  max-width: none;
+}
 
 .tv-capsule {
   border: 1px solid var(--tv-line);
@@ -563,18 +580,18 @@ html.dark body {
 }
 
 .tv-hero {
-  min-height: clamp(450px, 37vw, 660px);
-  border-radius: 20px;
+  width: 100%;
+  min-height: min(100svh, 1000px);
+  border-radius: 0;
   isolation: isolate;
 }
 
 .tv-hero-art {
   z-index: -1;
-  background-position: right 12% center;
-  background-size: auto 112%;
+  background-position: center;
+  background-size: cover;
   background-repeat: no-repeat;
-  filter: saturate(1.05);
-  mask-image: linear-gradient(90deg, transparent 37%, black 65%);
+  filter: saturate(1.05) brightness(0.72);
 }
 
 .tv-hero-backdrop {
@@ -589,17 +606,49 @@ html.dark body {
   z-index: -1;
   background: linear-gradient(
       90deg,
-      #101114 4%,
-      rgba(16, 17, 20, 0.97) 29%,
-      rgba(16, 17, 20, 0.63) 60%,
-      rgba(16, 17, 20, 0.16) 100%
+      rgba(9, 10, 12, 0.87) 0%,
+      rgba(9, 10, 12, 0.68) 27%,
+      rgba(9, 10, 12, 0.08) 57%,
+      rgba(9, 10, 12, 0.58) 100%
     ),
-    linear-gradient(0deg, rgba(16, 17, 20, 0.8), transparent 42%);
+    linear-gradient(
+      0deg,
+      rgba(9, 10, 12, 0.6),
+      transparent 55%,
+      rgba(9, 10, 12, 0.16)
+    );
 }
 
 .tv-hero-content {
-  min-height: clamp(450px, 37vw, 660px);
-  padding: clamp(30px, 5vw, 82px);
+  position: absolute;
+  left: clamp(48px, 8vw, 150px);
+  bottom: clamp(88px, 13vh, 150px);
+  width: min(38vw, 620px);
+  min-height: 0;
+  padding: 0;
+}
+.tv-hero-copy {
+  max-width: 620px;
+}
+.tv-hero-resume {
+  position: absolute;
+  right: clamp(32px, 5vw, 90px);
+  top: 50%;
+  width: min(310px, 24vw);
+  max-height: 55vh;
+  overflow: auto;
+  transform: translateY(-35%);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+.tv-hero-resume-item img {
+  transition: transform 300ms ease;
+}
+.tv-hero-resume-item:hover img {
+  transform: scale(1.06);
+}
+.tv-hero-play {
+  top: 46%;
 }
 
 .tv-hero h1 {
@@ -904,6 +953,18 @@ html.dark body {
   }
   .tv-hero {
     min-height: 490px;
+    width: auto;
+    border-radius: 20px;
+  }
+  .tv-app-home .tv-home {
+    padding: 18px 16px 40px;
+  }
+  .tv-app-home .tv-desktop-nav {
+    position: sticky;
+    background: color-mix(in srgb, var(--tv-bg) 93%, transparent);
+  }
+  .tv-app-home .tv-hero {
+    min-height: 490px;
   }
   .tv-hero-art {
     background-size: auto 78%;
@@ -921,6 +982,17 @@ html.dark body {
   .tv-hero-content {
     min-height: 490px;
     padding: 26px;
+    inset: auto 0 0;
+    width: auto;
+  }
+  .tv-hero-play {
+    display: none;
+  }
+  .tv-hero-resume {
+    display: none;
+  }
+  .tv-continue-mobile {
+    display: block;
   }
   .tv-hero h1 {
     font-size: 39px;
@@ -936,6 +1008,12 @@ html.dark body {
   }
   .tv-detail-copy {
     padding: 6px 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .tv-continue-mobile {
+    display: none;
   }
 }
 

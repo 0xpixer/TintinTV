@@ -12,7 +12,11 @@ export default function PageLayout({
   activePath = '/',
 }: PageLayoutProps) {
   return (
-    <div className='tv-app min-h-screen'>
+    <div
+      className={`tv-app min-h-screen ${
+        activePath === '/' ? 'tv-app-home' : ''
+      }`}
+    >
       <Sidebar activePath={activePath} />
       <MobileHeader showBackButton={activePath === '/play'} />
       <main className='tv-main'>{children}</main>

@@ -1,23 +1,30 @@
 /* eslint-disable no-console */
 'use client';
 
+import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import type { PlayRecord } from '@/lib/db.client';
 import {
+  type PlayRecord,
   clearAllPlayRecords,
   getAllPlayRecords,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import { processImageUrlWithCache } from '@/lib/utils';
 
 import ScrollableRow from '@/components/ScrollableRow';
 import VideoCard from '@/components/VideoCard';
 
 interface ContinueWatchingProps {
   className?: string;
+  placement?: 'section' | 'hero';
 }
 
-export default function ContinueWatching({ className }: ContinueWatchingProps) {
+export default function ContinueWatching({
+  className,
+  placement = 'section',
+}: ContinueWatchingProps) {
   const [playRecords, setPlayRecords] = useState<
     (PlayRecord & { key: string })[]
   >([]);
@@ -37,6 +44,16 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     );
 
     setPlayRecords(sortedRecords);
+  };
+
+  const getProgress = (record: PlayRecord) => {
+    if (record.total_time === 0) return 0;
+    return (record.play_time / record.total_time) * 100;
+  };
+
+  const parseKey = (key: string) => {
+    const [source, id] = key.split('+');
+    return { source, id };
   };
 
   useEffect(() => {
@@ -73,17 +90,79 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     return null;
   }
 
-  // 计算播放进度百分比
-  const getProgress = (record: PlayRecord) => {
-    if (record.total_time === 0) return 0;
-    return (record.play_time / record.total_time) * 100;
-  };
+  if (placement === 'hero') {
+    return (
+      <aside
+        className={`tv-hero-resume ${className || ''}`}
+        aria-label='继续观看'
+      >
+        <div className='mb-4 flex items-center justify-between'>
+          <h2 className='text-sm font-semibold tracking-wide text-white/90'>
+            继续观看
+          </h2>
+          <span className='text-xs text-white/55'>最近播放</span>
+        </div>
+        <div className='space-y-3'>
+          {loading
+            ? Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} className='flex animate-pulse gap-3'>
+                  <div className='h-[62px] w-[110px] shrink-0 rounded-lg bg-white/15' />
+                  <div className='flex-1 space-y-2 py-2'>
+                    <div className='h-3 w-4/5 rounded bg-white/15' />
+                    <div className='h-2 w-2/5 rounded bg-white/10' />
+                  </div>
+                </div>
+              ))
+            : playRecords.slice(0, 3).map((record) => {
+                const { source, id } = parseKey(record.key);
+                const progress = Math.min(
+                  100,
+                  Math.max(0, getProgress(record))
+                );
+                const href = `/play?source=${encodeURIComponent(
+                  source
+                )}&id=${encodeURIComponent(id)}&title=${encodeURIComponent(
+                  record.title
+                )}`;
 
-  // 从 key 中解析 source 和 id
-  const parseKey = (key: string) => {
-    const [source, id] = key.split('+');
-    return { source, id };
-  };
+                return (
+                  <Link
+                    key={record.key}
+                    href={href}
+                    className='tv-hero-resume-item group flex min-w-0 gap-3 rounded-lg p-2 transition-colors hover:bg-white/10'
+                  >
+                    <div className='relative h-[62px] w-[110px] shrink-0 overflow-hidden rounded-md bg-white/10'>
+                      <Image
+                        src={processImageUrlWithCache(record.cover, record.key)}
+                        alt=''
+                        fill
+                        sizes='110px'
+                        className='object-cover'
+                      />
+                      <div className='absolute inset-x-0 bottom-0 h-1 bg-white/30'>
+                        <div
+                          className='h-full bg-brand-400'
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className='flex min-w-0 flex-1 flex-col justify-center'>
+                      <span className='truncate text-sm font-medium text-white/90 group-hover:text-white'>
+                        {record.title}
+                      </span>
+                      <span className='mt-1 truncate text-xs text-white/55'>
+                        {record.source_name}
+                        {record.total_episodes > 1 &&
+                          ` · 第 ${record.index} 集`}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <section className={`mb-8 ${className || ''}`}>

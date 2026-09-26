@@ -2,7 +2,7 @@
 
 'use client';
 
-import { ChevronRight, PlayCircle, Search } from 'lucide-react';
+import { ChevronRight, Play } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 import { Suspense, useEffect, useState } from 'react';
@@ -77,6 +77,7 @@ function HomeClient() {
   const [loadingTvShows, setLoadingTvShows] = useState(true);
   const [loadingVarietyShows, setLoadingVarietyShows] = useState(true);
   const [heroBackdrop, setHeroBackdrop] = useState('');
+  const [heroOverview, setHeroOverview] = useState('');
   const heroItem = hotMovies[0] ?? hotTvShows[0] ?? hotVarietyShows[0];
   const loading =
     !heroItem && (loadingMovies || loadingTvShows || loadingVarietyShows);
@@ -97,6 +98,7 @@ function HomeClient() {
 
     let cancelled = false;
     setHeroBackdrop('');
+    setHeroOverview('');
 
     const params = new URLSearchParams({
       title: heroItem.title,
@@ -106,11 +108,19 @@ function HomeClient() {
 
     fetch(`/api/tmdb/backdrop?${params}`)
       .then((response) => (response.ok ? response.json() : null))
-      .then((data: { backdropUrl?: string | null } | null) => {
-        if (!cancelled && data?.backdropUrl) {
-          setHeroBackdrop(data.backdropUrl);
+      .then(
+        (
+          data: {
+            backdropUrl?: string | null;
+            overview?: string | null;
+          } | null
+        ) => {
+          if (!cancelled && data?.backdropUrl) {
+            setHeroBackdrop(data.backdropUrl);
+          }
+          if (!cancelled && data?.overview) setHeroOverview(data.overview);
         }
-      })
+      )
       .catch((error) => console.error('获取主视觉背景图失败:', error));
 
     return () => {
@@ -221,39 +231,44 @@ function HomeClient() {
               </>
             )}
             <div className='tv-hero-scrim absolute inset-0' />
-            <div className='tv-hero-content relative flex max-w-3xl flex-col justify-end'>
+            <div className='tv-hero-content relative'>
               {loading ? (
-                <div aria-label='正在加载推荐影片' className='space-y-4'>
-                  <div className='h-10 w-2/3 max-w-sm animate-pulse bg-white/15' />
-                  <div className='h-5 w-36 animate-pulse bg-white/15' />
+                <div
+                  aria-label='正在加载推荐影片'
+                  className='tv-hero-copy space-y-4'
+                >
+                  <div className='h-10 w-2/3 max-w-sm animate-pulse rounded bg-white/15' />
+                  <div className='h-5 w-36 animate-pulse rounded bg-white/15' />
                 </div>
               ) : heroItem ? (
                 <>
-                  <h1 className='max-w-2xl break-words text-4xl font-semibold leading-tight sm:text-5xl'>
-                    {heroItem.title}
-                  </h1>
-                  <p className='mt-3 flex items-center gap-3 text-sm font-medium text-white/85'>
-                    <span>{heroKind}</span>
-                    {heroItem.year && <span>{heroItem.year}</span>}
-                    {heroItem.rate && <span>豆瓣 {heroItem.rate}</span>}
-                  </p>
-                  <div className='mt-7 flex flex-wrap gap-3'>
-                    <Link
-                      href={`/play?title=${encodeURIComponent(
-                        heroItem.title
-                      )}&year=${encodeURIComponent(heroItem.year || '')}`}
-                      className='inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-brand-100'
-                    >
-                      <PlayCircle className='h-5 w-5' />
-                      查看片源
-                    </Link>
-                    <Link
-                      href='/search'
-                      className='inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/50 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/15'
-                    >
-                      <Search className='h-5 w-5' />
-                      搜索其他影片
-                    </Link>
+                  <div className='tv-hero-copy'>
+                    <p className='mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-white/65'>
+                      {heroKind}
+                    </p>
+                    <h1 className='max-w-2xl break-words text-4xl font-semibold leading-tight sm:text-5xl'>
+                      {heroItem.title}
+                    </h1>
+                    <p className='mt-3 flex items-center gap-3 text-sm font-medium text-white/75'>
+                      {heroItem.year && <span>{heroItem.year}</span>}
+                      {heroItem.rate && <span>豆瓣 {heroItem.rate}</span>}
+                    </p>
+                    {heroOverview && (
+                      <p className='mt-4 line-clamp-3 max-w-xl text-sm leading-6 text-white/75'>
+                        {heroOverview}
+                      </p>
+                    )}
+                    <div className='mt-6 flex flex-wrap gap-3'>
+                      <Link
+                        href={`/play?title=${encodeURIComponent(
+                          heroItem.title
+                        )}&year=${encodeURIComponent(heroItem.year || '')}`}
+                        className='inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-brand-100'
+                      >
+                        <Play className='h-4 w-4 fill-current' />
+                        立即播放
+                      </Link>
+                    </div>
                   </div>
                   {heroBackdrop && (
                     <p className='mt-3 max-w-2xl text-xs leading-5 text-white/60'>
@@ -273,26 +288,32 @@ function HomeClient() {
                 </>
               ) : (
                 <>
-                  <h1 className='text-4xl font-semibold leading-tight sm:text-5xl'>
-                    找到今晚想看的
-                  </h1>
-                  <p className='mt-3 text-sm text-white/85'>
-                    浏览电影、剧集和综艺。
-                  </p>
-                  <Link
-                    href='/search'
-                    className='mt-7 inline-flex min-h-11 w-fit items-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-slate-950'
-                  >
-                    <Search className='h-5 w-5' />
-                    搜索影片
-                  </Link>
+                  <div className='tv-hero-copy'>
+                    <h1 className='text-4xl font-semibold leading-tight sm:text-5xl'>
+                      找到今晚想看的
+                    </h1>
+                    <p className='mt-3 text-sm text-white/85'>
+                      浏览电影、剧集和综艺。
+                    </p>
+                  </div>
                 </>
               )}
             </div>
+            {heroItem && (
+              <Link
+                href={`/play?title=${encodeURIComponent(
+                  heroItem.title
+                )}&year=${encodeURIComponent(heroItem.year || '')}`}
+                aria-label={`播放 ${heroItem.title}`}
+                className='tv-hero-play absolute left-1/2 top-1/2 z-10 flex h-[76px] w-[76px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-black/30 text-white shadow-xl backdrop-blur-sm transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white'
+              >
+                <Play className='ml-1 h-7 w-7 fill-current' />
+              </Link>
+            )}
+            <ContinueWatching placement='hero' />
           </section>
 
-          {/* 继续观看 */}
-          <ContinueWatching />
+          <ContinueWatching className='tv-continue-mobile' />
 
           {/* 热门电影 */}
           <section className='mb-6'>

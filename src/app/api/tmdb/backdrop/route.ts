@@ -12,6 +12,12 @@ interface TmdbSearchResult {
   original_name?: string;
   release_date?: string;
   first_air_date?: string;
+  overview?: string;
+}
+
+interface TmdbArtwork {
+  backdropUrl: string | null;
+  overview: string | null;
 }
 
 function normalizeTitle(value: string): string {
@@ -22,9 +28,10 @@ function chooseBackdrop(
   results: TmdbSearchResult[],
   title: string,
   year: string
-): string | null {
+): TmdbArtwork {
   const normalizedTitle = normalizeTitle(title);
-  let bestMatch: { score: number; path: string } | null = null;
+  let bestMatch: { score: number; path: string; overview: string } | null =
+    null;
 
   for (const result of results) {
     const path = result.backdrop_path;
@@ -54,17 +61,21 @@ function chooseBackdrop(
       (exactTitle ? 100 : 55) +
       (year && candidateYear === year ? 20 : year && candidateYear ? -30 : 0);
 
-    if (!bestMatch || score > bestMatch.score) bestMatch = { score, path };
+    if (!bestMatch || score > bestMatch.score) {
+      bestMatch = { score, path, overview: result.overview?.trim() || '' };
+    }
   }
 
-  if (!bestMatch || bestMatch.score < 70) return null;
-  return `https://image.tmdb.org/t/p/w1280${bestMatch.path}`;
+  if (!bestMatch || bestMatch.score < 70) {
+    return { backdropUrl: null, overview: null };
+  }
+  return {
+    backdropUrl: `https://image.tmdb.org/t/p/w1280${bestMatch.path}`,
+    overview: bestMatch.overview || null,
+  };
 }
 
-function jsonResponse(
-  data: { backdropUrl: string | null },
-  cacheSeconds: number
-) {
+function jsonResponse(data: TmdbArtwork, cacheSeconds: number) {
   const cacheControl = `public, max-age=300, s-maxage=${cacheSeconds}, stale-while-revalidate=86400`;
   const cdnCacheControl = `public, s-maxage=${cacheSeconds}, stale-while-revalidate=86400`;
 
@@ -100,7 +111,9 @@ export async function GET(request: Request) {
 
   const accessToken = process.env.TMDB_API_READ_ACCESS_TOKEN;
   const apiKey = process.env.TMDB_API_KEY;
-  if (!accessToken && !apiKey) return jsonResponse({ backdropUrl: null }, 300);
+  if (!accessToken && !apiKey) {
+    return jsonResponse({ backdropUrl: null, overview: null }, 300);
+  }
 
   const type = mediaType as MediaType;
   const url = new URL(`https://api.themoviedb.org/3/search/${type}`);
@@ -124,12 +137,14 @@ export async function GET(request: Request) {
       signal: AbortSignal.timeout(5000),
     });
 
-    if (!response.ok) return jsonResponse({ backdropUrl: null }, 300);
+    if (!response.ok) {
+      return jsonResponse({ backdropUrl: null, overview: null }, 300);
+    }
 
     const data = (await response.json()) as { results?: TmdbSearchResult[] };
-    const backdropUrl = chooseBackdrop(data.results || [], title, year);
-    return jsonResponse({ backdropUrl }, backdropUrl ? 86400 : 3600);
+    const artwork = chooseBackdrop(data.results || [], title, year);
+    return jsonResponse(artwork, artwork.backdropUrl ? 86400 : 3600);
   } catch {
-    return jsonResponse({ backdropUrl: null }, 300);
+    return jsonResponse({ backdropUrl: null, overview: null }, 300);
   }
 }
