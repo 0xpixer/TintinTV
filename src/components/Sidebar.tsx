@@ -33,7 +33,7 @@ export default function Sidebar({ activePath }: SidebarProps) {
     activePath || `${pathname}${queryString ? `?${queryString}` : ''}`;
 
   return (
-    <header className='tv-desktop-nav hidden md:flex'>
+    <header className='tv-desktop-nav'>
       <Link href='/' className='tv-brand' aria-label={`${siteName} 首页`}>
         <span className='tv-brand-wordmark'>
           <Image

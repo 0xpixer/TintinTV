@@ -19,9 +19,16 @@ interface DoubanCategoryApiResponse {
   }>;
 }
 
-async function fetchDoubanData(
-  url: string
-): Promise<DoubanCategoryApiResponse> {
+interface DoubanMovieApiResponse {
+  subjects: Array<{
+    id: string;
+    title: string;
+    cover: string;
+    rate: string;
+  }>;
+}
+
+async function fetchDoubanData<T>(url: string): Promise<T> {
   // 添加超时控制
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
@@ -47,7 +54,7 @@ async function fetchDoubanData(
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    return await response.json();
+    return (await response.json()) as T;
   } catch (error) {
     clearTimeout(timeoutId);
     throw error;
@@ -99,7 +106,7 @@ export async function GET(request: Request) {
 
   try {
     // 调用豆瓣 API
-    const doubanData = await fetchDoubanData(target);
+    const doubanData = await fetchDoubanData<DoubanCategoryApiResponse>(target);
 
     // 转换数据格式
     const list: DoubanItem[] = doubanData.items.map((item) => ({
@@ -116,18 +123,56 @@ export async function GET(request: Request) {
       list: list,
     };
 
-    const cacheTime = await getCacheTime();
-    return NextResponse.json(response, {
-      headers: {
-        'Cache-Control': `public, max-age=300, s-maxage=${cacheTime}, stale-while-revalidate=86400`,
-        'CDN-Cache-Control': `public, s-maxage=${cacheTime}, stale-while-revalidate=86400`,
-        'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}, stale-while-revalidate=86400`,
-      },
-    });
+    return categoryResponse(response);
   } catch (error) {
+    if (kind === 'movie' && category === '热门' && type === '全部') {
+      try {
+        const fallbackUrl = new URL(
+          'https://movie.douban.com/j/search_subjects'
+        );
+        fallbackUrl.search = new URLSearchParams({
+          type: 'movie',
+          tag: '热门',
+          sort: 'recommend',
+          page_limit: String(pageLimit),
+          page_start: String(pageStart),
+        }).toString();
+        const fallback = await fetchDoubanData<DoubanMovieApiResponse>(
+          fallbackUrl.toString()
+        );
+        const list: DoubanItem[] = fallback.subjects.map((item) => ({
+          id: item.id,
+          title: item.title,
+          poster: item.cover,
+          rate: item.rate,
+          year: '',
+        }));
+        return categoryResponse({ code: 200, message: '获取成功', list });
+      } catch (fallbackError) {
+        // eslint-disable-next-line no-console
+        console.error('豆瓣电影备用接口失败:', fallbackError);
+      }
+    }
     return NextResponse.json(
       { error: '获取豆瓣数据失败', details: (error as Error).message },
       { status: 500 }
     );
   }
+}
+
+async function categoryResponse(response: DoubanResult) {
+  let cacheTime = 7200;
+  try {
+    cacheTime = await getCacheTime();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn('读取豆瓣分类缓存时长失败，使用默认值:', error);
+  }
+  return NextResponse.json(response, {
+    headers: {
+      'Cache-Control': `public, max-age=300, s-maxage=${cacheTime}, stale-while-revalidate=86400`,
+      'CDN-Cache-Control': `public, s-maxage=${cacheTime}, stale-while-revalidate=86400`,
+      'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}, stale-while-revalidate=86400`,
+    },
+  });
 }

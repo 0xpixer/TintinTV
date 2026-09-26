@@ -456,7 +456,7 @@ html.dark body {
   position: sticky;
   top: 0;
   z-index: 550;
-  display: grid;
+  display: none;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   height: 76px;
   align-items: center;
@@ -469,11 +469,16 @@ html.dark body {
 .tv-app-home .tv-desktop-nav {
   position: absolute;
   inset: 0 0 auto;
-  display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   border-bottom-color: transparent;
   background: transparent;
   backdrop-filter: none;
+}
+
+@media (min-width: 768px) {
+  .tv-desktop-nav {
+    display: grid;
+  }
 }
 
 .tv-brand {
@@ -1097,7 +1102,6 @@ html.dark body {
   }
   .tv-app-home .tv-desktop-nav {
     position: sticky;
-    display: flex;
     background: color-mix(in srgb, var(--tv-bg) 93%, transparent);
   }
   .tv-app-home .tv-hero {
