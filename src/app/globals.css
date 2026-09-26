@@ -886,6 +886,17 @@ html.dark body {
   .tv-play {
     padding: 18px 16px 40px;
   }
+  .tv-player-frame {
+    width: calc(100% + 32px);
+    margin-inline: -16px;
+    border-radius: 0;
+  }
+  .tv-player-frame > div {
+    border-radius: 0;
+  }
+  .tv-player-frame [role='status'] {
+    border-radius: 0;
+  }
   .tv-hero {
     min-height: 490px;
   }

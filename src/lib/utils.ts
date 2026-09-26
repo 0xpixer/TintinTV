@@ -43,16 +43,15 @@ export function processImageUrl(originalUrl: string): string {
 /**
  * 处理图片 URL，使用新的图片缓存系统
  */
-export function processImageUrlWithCache(originalUrl: string, doubanId?: string): string {
+export function processImageUrlWithCache(
+  originalUrl: string,
+  _doubanId?: string
+): string {
   if (!originalUrl) return originalUrl;
 
   // Use the new image cache API
   const cacheUrl = new URL('/api/image-cache', window.location.origin);
   cacheUrl.searchParams.set('url', originalUrl);
-  if (doubanId) {
-    cacheUrl.searchParams.set('doubanId', doubanId);
-  }
-
   return cacheUrl.toString();
 }
 

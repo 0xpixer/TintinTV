@@ -7,19 +7,40 @@ const imageCache = new Map<
   string,
   { data: ArrayBuffer; contentType: string; timestamp: number }
 >();
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const CACHE_DURATION = 24 * 60 * 60 * 1000;
+const IMAGE_CACHE_CONTROL =
+  'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=604800';
+
+function isAllowedImageUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'https:' &&
+      (url.hostname === 'doubanio.com' ||
+        url.hostname.endsWith('.doubanio.com'))
+    );
+  } catch {
+    return false;
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const imageUrl = searchParams.get('url');
-  const doubanId = searchParams.get('doubanId');
 
   if (!imageUrl) {
     return NextResponse.json({ error: 'Missing image URL' }, { status: 400 });
   }
 
+  if (!isAllowedImageUrl(imageUrl)) {
+    return NextResponse.json(
+      { error: 'Unsupported image host' },
+      { status: 400 }
+    );
+  }
+
   // Check cache first
-  const cacheKey = doubanId || imageUrl;
+  const cacheKey = imageUrl;
   const cached = imageCache.get(cacheKey);
 
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
@@ -27,7 +48,11 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         'Content-Type': cached.contentType,
-        'Cache-Control': 'public, max-age=86400', // 24 hours
+        'Cache-Control': IMAGE_CACHE_CONTROL,
+        'CDN-Cache-Control':
+          'public, s-maxage=2592000, stale-while-revalidate=604800',
+        'Vercel-CDN-Cache-Control':
+          'public, s-maxage=2592000, stale-while-revalidate=604800',
         'X-Cache': 'HIT',
       },
     });
@@ -108,7 +133,7 @@ export async function GET(request: Request) {
         status: 200,
         headers: {
           'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=3600', // 1 hour for fallback
+          'Cache-Control': 'public, max-age=300, s-maxage=300',
           'X-Cache': 'FALLBACK',
         },
       });
@@ -137,7 +162,11 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=86400', // 24 hours
+        'Cache-Control': IMAGE_CACHE_CONTROL,
+        'CDN-Cache-Control':
+          'public, s-maxage=2592000, stale-while-revalidate=604800',
+        'Vercel-CDN-Cache-Control':
+          'public, s-maxage=2592000, stale-while-revalidate=604800',
         'X-Cache': 'MISS',
       },
     });

@@ -108,15 +108,14 @@ export async function POST(req: NextRequest) {
         'user',
         true
       ); // localstorage 模式包含 password
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 7); // 7天过期
+      const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
       response.cookies.set('auth', cookieValue, {
         path: '/',
         expires,
         sameSite: 'lax', // 改为 lax 以支持 PWA
         httpOnly: false, // PWA 需要客户端可访问
-        secure: false, // 根据协议自动设置
+        secure: req.nextUrl.protocol === 'https:',
       });
 
       return response;
@@ -145,15 +144,14 @@ export async function POST(req: NextRequest) {
         'owner',
         false
       ); // 数据库模式不包含 password
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 7); // 7天过期
+      const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
       response.cookies.set('auth', cookieValue, {
         path: '/',
         expires,
         sameSite: 'lax', // 改为 lax 以支持 PWA
         httpOnly: false, // PWA 需要客户端可访问
-        secure: false, // 根据协议自动设置
+        secure: req.nextUrl.protocol === 'https:',
       });
 
       return response;
@@ -185,15 +183,14 @@ export async function POST(req: NextRequest) {
         user?.role || 'user',
         false
       ); // 数据库模式不包含 password
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 7); // 7天过期
+      const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
       response.cookies.set('auth', cookieValue, {
         path: '/',
         expires,
         sameSite: 'lax', // 改为 lax 以支持 PWA
         httpOnly: false, // PWA 需要客户端可访问
-        secure: false, // 根据协议自动设置
+        secure: req.nextUrl.protocol === 'https:',
       });
 
       return response;

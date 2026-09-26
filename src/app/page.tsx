@@ -73,8 +73,12 @@ function HomeClient() {
   const [hotMovies, setHotMovies] = useState<DoubanItem[]>([]);
   const [hotTvShows, setHotTvShows] = useState<DoubanItem[]>([]);
   const [hotVarietyShows, setHotVarietyShows] = useState<DoubanItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingMovies, setLoadingMovies] = useState(true);
+  const [loadingTvShows, setLoadingTvShows] = useState(true);
+  const [loadingVarietyShows, setLoadingVarietyShows] = useState(true);
   const heroItem = hotMovies[0] ?? hotTvShows[0] ?? hotVarietyShows[0];
+  const loading =
+    !heroItem && (loadingMovies || loadingTvShows || loadingVarietyShows);
   const heroKind = hotMovies[0]
     ? '热门电影'
     : hotTvShows[0]
@@ -133,34 +137,34 @@ function HomeClient() {
   useEffect(() => {
     const fetchDoubanData = async () => {
       try {
-        setLoading(true);
-
-        // 并行获取热门电影、热门剧集和热门综艺，限制为12个
-        const [moviesData, tvShowsData, varietyShowsData] = await Promise.all([
+        const requests = [
           getDoubanCategories({
             kind: 'movie',
             category: '热门',
             type: '全部',
-          }),
-          getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
-          getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
-        ]);
+          })
+            .then((data) => {
+              if (data.code === 200) setHotMovies(data.list.slice(0, 12));
+            })
+            .catch((error) => console.error('获取热门电影失败:', error))
+            .finally(() => setLoadingMovies(false)),
+          getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' })
+            .then((data) => {
+              if (data.code === 200) setHotTvShows(data.list.slice(0, 12));
+            })
+            .catch((error) => console.error('获取热门剧集失败:', error))
+            .finally(() => setLoadingTvShows(false)),
+          getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' })
+            .then((data) => {
+              if (data.code === 200) setHotVarietyShows(data.list.slice(0, 12));
+            })
+            .catch((error) => console.error('获取热门综艺失败:', error))
+            .finally(() => setLoadingVarietyShows(false)),
+        ];
 
-        if (moviesData.code === 200) {
-          setHotMovies(moviesData.list.slice(0, 12));
-        }
-
-        if (tvShowsData.code === 200) {
-          setHotTvShows(tvShowsData.list.slice(0, 12));
-        }
-
-        if (varietyShowsData.code === 200) {
-          setHotVarietyShows(varietyShowsData.list.slice(0, 12));
-        }
+        await Promise.all(requests);
       } catch (error) {
         console.error('获取豆瓣数据失败:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -260,7 +264,7 @@ function HomeClient() {
               </Link>
             </div>
             <ScrollableRow>
-              {loading
+              {loadingMovies
                 ? // 加载状态显示现代骨架屏
                   Array.from({ length: 12 }).map((_, index) => (
                     <div
@@ -307,7 +311,7 @@ function HomeClient() {
               </Link>
             </div>
             <ScrollableRow>
-              {loading
+              {loadingTvShows
                 ? // 加载状态显示现代骨架屏
                   Array.from({ length: 12 }).map((_, index) => (
                     <div
@@ -354,7 +358,7 @@ function HomeClient() {
               </Link>
             </div>
             <ScrollableRow>
-              {loading
+              {loadingVarietyShows
                 ? // 加载状态显示现代骨架屏
                   Array.from({ length: 12 }).map((_, index) => (
                     <div

@@ -119,7 +119,9 @@ export async function GET(request: Request) {
     const cacheTime = await getCacheTime();
     return NextResponse.json(response, {
       headers: {
-        'Cache-Control': `public, max-age=${cacheTime}`,
+        'Cache-Control': `public, max-age=300, s-maxage=${cacheTime}, stale-while-revalidate=86400`,
+        'CDN-Cache-Control': `public, s-maxage=${cacheTime}, stale-while-revalidate=86400`,
+        'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}, stale-while-revalidate=86400`,
       },
     });
   } catch (error) {
