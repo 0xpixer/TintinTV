@@ -21,14 +21,14 @@ interface SidebarProps {
   activePath?: string;
 }
 
-const primaryItems = [
+export const primaryItems = [
   { href: '/', label: '首页', icon: Home },
   { href: '/douban?type=movie', label: '电影', icon: Film },
   { href: '/douban?type=tv', label: '剧集', icon: Tv },
   { href: '/animation', label: '动画', icon: Sparkles },
   { href: '/douban?type=show', label: '综艺', icon: Clapperboard },
 ];
-const quickItems = [
+export const quickItems = [
   { href: '/favorites', label: '收藏', icon: Heart },
   { href: '/search', label: '搜索', icon: Search },
 ];

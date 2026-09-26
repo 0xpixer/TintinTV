@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import { getCacheTime } from '@/lib/config';
+import { readDoubanCache, writeDoubanCache } from '@/lib/douban-server-cache';
 
 const edge = require('next/dist/compiled/@edge-runtime/primitives');
 Object.assign(global, {
@@ -13,13 +14,24 @@ Object.assign(global, {
 const { GET } = require('./route') as typeof import('./route');
 
 jest.mock('@/lib/config', () => ({ getCacheTime: jest.fn() }));
+jest.mock('@/lib/douban-server-cache', () => ({
+  readDoubanCache: jest.fn(),
+  writeDoubanCache: jest.fn(),
+}));
 
 const mockedGetCacheTime = getCacheTime as jest.MockedFunction<
   typeof getCacheTime
 >;
+const mockedReadCache = readDoubanCache as jest.MockedFunction<
+  typeof readDoubanCache
+>;
 
 describe('Douban category route', () => {
   const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    mockedReadCache.mockResolvedValue(null);
+  });
 
   afterEach(() => {
     global.fetch = originalFetch;
@@ -83,5 +95,81 @@ describe('Douban category route', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Cache-Control')).toContain('s-maxage=7200');
+  });
+
+  it('serves shared cached data without calling Douban', async () => {
+    mockedReadCache.mockResolvedValue({
+      fresh: true,
+      result: {
+        code: 200,
+        message: '获取成功',
+        list: [{ id: '1', title: 'Cached', poster: '', rate: '', year: '' }],
+      },
+    });
+    global.fetch = jest.fn() as typeof fetch;
+    mockedGetCacheTime.mockResolvedValue(3600);
+
+    const response = await GET(
+      new Request(
+        'https://example.com/api/douban/categories?kind=tv&category=tv&type=tv'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).list[0].title).toBe('Cached');
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the TV tag when the primary TV API times out', async () => {
+    global.fetch = jest
+      .fn()
+      .mockRejectedValueOnce(new Error('timeout'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          subjects: [
+            { id: '2', title: 'Series', cover: 'poster.jpg', rate: '8.0' },
+          ],
+        }),
+      }) as typeof fetch;
+    mockedGetCacheTime.mockResolvedValue(3600);
+
+    const response = await GET(
+      new Request(
+        'https://example.com/api/douban/categories?kind=tv&category=tv&type=tv'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).list[0].title).toBe('Series');
+    expect((global.fetch as jest.Mock).mock.calls[1][0]).toContain(
+      'tag=%E7%83%AD%E9%97%A8'
+    );
+    expect(writeDoubanCache).toHaveBeenCalled();
+  });
+
+  it('serves stale shared data when both Douban sources fail', async () => {
+    jest.spyOn(console, 'error').mockImplementation();
+    mockedReadCache.mockResolvedValue({
+      fresh: false,
+      result: {
+        code: 200,
+        message: '获取成功',
+        list: [{ id: '3', title: 'Stale', poster: '', rate: '', year: '' }],
+      },
+    });
+    global.fetch = jest
+      .fn()
+      .mockRejectedValue(new Error('timeout')) as typeof fetch;
+    mockedGetCacheTime.mockResolvedValue(3600);
+
+    const response = await GET(
+      new Request(
+        'https://example.com/api/douban/categories?kind=tv&category=tv&type=tv'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).list[0].title).toBe('Stale');
   });
 });

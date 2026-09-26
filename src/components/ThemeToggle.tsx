@@ -25,7 +25,7 @@ export function ThemeToggle() {
   useEffect(() => {
     setMounted(true);
     setThemeColor(resolvedTheme);
-  }, []);
+  }, [resolvedTheme]);
 
   if (!mounted) {
     // 渲染一个占位符以避免布局偏移

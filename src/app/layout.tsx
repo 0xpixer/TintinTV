@@ -58,8 +58,6 @@ export const viewport: Viewport = {
   themeColor: '#101114',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
 };
 
@@ -124,20 +122,11 @@ export default async function RootLayout({
         <meta name='format-detection' content='telephone=no' />
         <meta name='mobile-web-app-capable' content='yes' />
         <meta name='msapplication-config' content='/browserconfig.xml' />
-        <meta name='msapplication-TileColor' content='#06b6d4' />
+        <meta name='msapplication-TileColor' content='#101114' />
         <meta name='msapplication-tap-highlight' content='no' />
 
         {/* iOS Specific */}
         <meta name='apple-touch-fullscreen' content='yes' />
-        <meta name='apple-mobile-web-app-capable' content='yes' />
-        <meta
-          name='apple-mobile-web-app-status-bar-style'
-          content='black-translucent'
-        />
-
-        {/* Lock Screen Cover Support */}
-        <meta name='apple-mobile-web-app-title' content={siteName} />
-
         {/* High resolution iOS icons - using standard iOS icon files */}
         <link rel='apple-touch-icon' href='/apple-touch-icon.png' />
         <link
@@ -179,10 +168,6 @@ export default async function RootLayout({
           sizes='512x512'
           href='/icons/icon-512x512.png'
         />
-
-        {/* Android Specific */}
-        <meta name='theme-color' content='#101114' />
-        <meta name='msapplication-TileColor' content='#06b6d4' />
 
         {/* 将配置序列化后直接写入脚本，浏览器端可通过 window.RUNTIME_CONFIG 获取 */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}

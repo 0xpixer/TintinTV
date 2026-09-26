@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
+import { readDoubanCache, writeDoubanCache } from '@/lib/douban-server-cache';
 import { DoubanItem, DoubanResult } from '@/lib/types';
 
 interface DoubanApiResponse {
@@ -88,6 +89,12 @@ export async function GET(request: Request) {
     return handleTop250(pageStart);
   }
 
+  const cacheKey = ['search', type, tag, pageSize, pageStart]
+    .map(encodeURIComponent)
+    .join(':');
+  const cached = await readDoubanCache(cacheKey);
+  if (cached?.fresh) return cachedResponse(cached.result);
+
   const target = `https://movie.douban.com/j/search_subjects?type=${type}&tag=${tag}&sort=recommend&page_limit=${pageSize}&page_start=${pageStart}`;
 
   try {
@@ -109,23 +116,29 @@ export async function GET(request: Request) {
       list: list,
     };
 
-    let cacheTime = 7200;
-    try {
-      cacheTime = await getCacheTime();
-    } catch {
-      // Keep the movie list available when storage is temporarily unavailable.
-    }
-    return NextResponse.json(response, {
-      headers: {
-        'Cache-Control': `public, max-age=${cacheTime}`,
-      },
-    });
+    await writeDoubanCache(cacheKey, response);
+    return cachedResponse(response);
   } catch (error) {
+    if (cached) return cachedResponse(cached.result);
     return NextResponse.json(
       { error: '获取豆瓣数据失败', details: (error as Error).message },
       { status: 500 }
     );
   }
+}
+
+async function cachedResponse(response: DoubanResult) {
+  let cacheTime = 7200;
+  try {
+    cacheTime = await getCacheTime();
+  } catch {
+    // Keep the movie list available when storage is temporarily unavailable.
+  }
+  return NextResponse.json(response, {
+    headers: {
+      'Cache-Control': `public, max-age=${cacheTime}`,
+    },
+  });
 }
 
 function handleTop250(pageStart: number) {

@@ -1,4 +1,3 @@
-import MobileBottomNav from './MobileBottomNav';
 import MobileHeader from './MobileHeader';
 import Sidebar from './Sidebar';
 
@@ -20,7 +19,6 @@ export default function PageLayout({
       <Sidebar activePath={activePath} />
       <MobileHeader showBackButton={activePath === '/play'} />
       <main className='tv-main'>{children}</main>
-      <MobileBottomNav activePath={activePath} />
     </div>
   );
 }

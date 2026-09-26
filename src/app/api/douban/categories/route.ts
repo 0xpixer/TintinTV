@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
+import { readDoubanCache, writeDoubanCache } from '@/lib/douban-server-cache';
 import { DoubanItem, DoubanResult } from '@/lib/types';
 
 interface DoubanCategoryApiResponse {
@@ -103,6 +104,11 @@ export async function GET(request: Request) {
   }
 
   const target = `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=${pageStart}&limit=${pageLimit}&category=${category}&type=${type}`;
+  const cacheKey = [kind, category, type, pageLimit, pageStart]
+    .map(encodeURIComponent)
+    .join(':');
+  const cached = await readDoubanCache(cacheKey);
+  if (cached?.fresh) return categoryResponse(cached.result);
 
   try {
     // 调用豆瓣 API
@@ -123,16 +129,27 @@ export async function GET(request: Request) {
       list: list,
     };
 
+    await writeDoubanCache(cacheKey, response);
     return categoryResponse(response);
   } catch (error) {
-    if (kind === 'movie' && category === '热门' && type === '全部') {
+    const fallbackTag =
+      kind === 'movie' && category === '热门' && type === '全部'
+        ? '热门'
+        : kind === 'tv' && category === 'tv' && type === 'tv'
+        ? '热门'
+        : kind === 'tv' && category === 'show' && type === 'show'
+        ? '综艺'
+        : kind === 'tv' && category === 'tv' && type === 'tv_animation'
+        ? '日本动画'
+        : null;
+    if (fallbackTag) {
       try {
         const fallbackUrl = new URL(
           'https://movie.douban.com/j/search_subjects'
         );
         fallbackUrl.search = new URLSearchParams({
-          type: 'movie',
-          tag: '热门',
+          type: kind,
+          tag: fallbackTag,
           sort: 'recommend',
           page_limit: String(pageLimit),
           page_start: String(pageStart),
@@ -147,12 +164,17 @@ export async function GET(request: Request) {
           rate: item.rate,
           year: '',
         }));
-        return categoryResponse({ code: 200, message: '获取成功', list });
+        if (list.length) {
+          const response = { code: 200, message: '获取成功', list };
+          await writeDoubanCache(cacheKey, response);
+          return categoryResponse(response);
+        }
       } catch (fallbackError) {
         // eslint-disable-next-line no-console
-        console.error('豆瓣电影备用接口失败:', fallbackError);
+        console.error('豆瓣分类备用接口失败:', fallbackError);
       }
     }
+    if (cached) return categoryResponse(cached.result);
     return NextResponse.json(
       { error: '获取豆瓣数据失败', details: (error as Error).message },
       { status: 500 }
