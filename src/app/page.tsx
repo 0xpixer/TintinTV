@@ -2,7 +2,7 @@
 
 'use client';
 
-import { ChevronRight, PlayCircle, Search, X } from 'lucide-react';
+import { ChevronRight, PlayCircle, Search } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 import { Suspense, useEffect, useState } from 'react';
@@ -14,7 +14,6 @@ import { processImageUrlWithCache } from '@/lib/utils';
 import ContinueWatching from '@/components/ContinueWatching';
 import PageLayout from '@/components/PageLayout';
 import ScrollableRow from '@/components/ScrollableRow';
-import { useSite } from '@/components/SiteProvider';
 import VideoCard from '@/components/VideoCard';
 
 // Error boundary component
@@ -75,9 +74,6 @@ function HomeClient() {
   const [hotTvShows, setHotTvShows] = useState<DoubanItem[]>([]);
   const [hotVarietyShows, setHotVarietyShows] = useState<DoubanItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { announcement } = useSite();
-
-  const [showAnnouncement, setShowAnnouncement] = useState(false);
   const heroItem = hotMovies[0] ?? hotTvShows[0] ?? hotVarietyShows[0];
   const heroKind = hotMovies[0]
     ? '热门电影'
@@ -134,18 +130,6 @@ function HomeClient() {
     };
   }, [hotMovies.length, hotTvShows.length, loading]);
 
-  // 检查公告弹窗状态
-  useEffect(() => {
-    if (typeof window !== 'undefined' && announcement) {
-      const hasSeenAnnouncement = localStorage.getItem('hasSeenAnnouncement');
-      if (hasSeenAnnouncement !== announcement) {
-        setShowAnnouncement(true);
-      } else {
-        setShowAnnouncement(Boolean(!hasSeenAnnouncement && announcement));
-      }
-    }
-  }, [announcement]);
-
   useEffect(() => {
     const fetchDoubanData = async () => {
       try {
@@ -182,11 +166,6 @@ function HomeClient() {
 
     fetchDoubanData();
   }, []);
-
-  const handleCloseAnnouncement = (announcement: string) => {
-    setShowAnnouncement(false);
-    localStorage.setItem('hasSeenAnnouncement', announcement); // 记录已查看弹窗
-  };
 
   return (
     <PageLayout>
@@ -408,39 +387,6 @@ function HomeClient() {
           </section>
         </div>
       </div>
-      {announcement && showAnnouncement && (
-        <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm transition-opacity duration-300 dark:bg-black/70 ${
-            showAnnouncement ? '' : 'opacity-0 pointer-events-none'
-          }`}
-        >
-          <div className='tv-announcement w-full max-w-md p-6 sm:p-7'>
-            <div className='flex justify-between items-start mb-6'>
-              <h3 className='text-2xl font-semibold text-slate-950 dark:text-white'>
-                提示
-              </h3>
-              <button
-                onClick={() => handleCloseAnnouncement(announcement)}
-                className='flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors duration-300 hover:bg-slate-950/5 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-white'
-                aria-label='关闭'
-              >
-                <X className='h-5 w-5' />
-              </button>
-            </div>
-            <div className='mb-8'>
-              <p className='leading-relaxed text-slate-600 dark:text-slate-300'>
-                {announcement}
-              </p>
-            </div>
-            <button
-              onClick={() => handleCloseAnnouncement(announcement)}
-              className='w-full btn-primary'
-            >
-              我知道了
-            </button>
-          </div>
-        </div>
-      )}
     </PageLayout>
   );
 }
