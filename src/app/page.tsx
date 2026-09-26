@@ -231,52 +231,35 @@ function HomeClient() {
               </>
             )}
             <div className='tv-hero-scrim absolute inset-0' />
-            <div className='tv-hero-content relative'>
-              {loading ? (
-                <div
-                  aria-label='正在加载推荐影片'
-                  className='tv-hero-copy space-y-4'
-                >
-                  <div className='h-10 w-2/3 max-w-sm animate-pulse rounded bg-white/15' />
-                  <div className='h-5 w-36 animate-pulse rounded bg-white/15' />
-                </div>
-              ) : heroItem ? (
-                <>
+            <div className='tv-hero-bottom'>
+              <div className='tv-hero-content'>
+                {loading ? (
+                  <div
+                    aria-label='正在加载推荐影片'
+                    className='tv-hero-copy space-y-4'
+                  >
+                    <div className='h-10 w-2/3 max-w-sm animate-pulse rounded bg-white/15' />
+                    <div className='h-5 w-36 animate-pulse rounded bg-white/15' />
+                  </div>
+                ) : heroItem ? (
                   <div className='tv-hero-copy'>
-                    <p className='mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-white/65'>
+                    <p className='mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-white/75'>
                       {heroKind}
                     </p>
-                    <h1 className='max-w-2xl break-words text-4xl font-semibold leading-tight sm:text-5xl'>
+                    <h1 className='text-4xl font-semibold leading-tight sm:text-5xl'>
                       {heroItem.title}
                     </h1>
-                    <p className='mt-3 flex items-center gap-3 text-sm font-medium text-white/75'>
+                    <p className='mt-3 flex items-center gap-3 text-sm font-medium text-white/85'>
                       {heroItem.year && <span>{heroItem.year}</span>}
                       {heroItem.rate && <span>豆瓣 {heroItem.rate}</span>}
                     </p>
                     {heroOverview && (
-                      <p className='mt-4 line-clamp-3 max-w-xl text-sm leading-6 text-white/75'>
+                      <p className='mt-4 line-clamp-3 max-w-xl text-sm leading-6 text-white/85'>
                         {heroOverview}
                       </p>
                     )}
                   </div>
-                  {heroBackdrop && (
-                    <p className='mt-3 max-w-2xl text-xs leading-5 text-white/60'>
-                      背景图片来自{' '}
-                      <a
-                        href='https://www.themoviedb.org/'
-                        target='_blank'
-                        rel='noreferrer'
-                        className='underline underline-offset-2'
-                      >
-                        TMDB
-                      </a>
-                      。This product uses the TMDB API but is not endorsed or
-                      certified by TMDB.
-                    </p>
-                  )}
-                </>
-              ) : (
-                <>
+                ) : (
                   <div className='tv-hero-copy'>
                     <h1 className='text-4xl font-semibold leading-tight sm:text-5xl'>
                       找到今晚想看的
@@ -285,9 +268,25 @@ function HomeClient() {
                       浏览电影、剧集和综艺。
                     </p>
                   </div>
-                </>
-              )}
+                )}
+              </div>
+              <ContinueWatching placement='hero' />
             </div>
+            {heroBackdrop && (
+              <p className='tv-hero-attribution'>
+                背景图片来自{' '}
+                <a
+                  href='https://www.themoviedb.org/'
+                  target='_blank'
+                  rel='noreferrer'
+                  className='underline underline-offset-2'
+                >
+                  TMDB
+                </a>
+                。This product uses the TMDB API but is not endorsed or
+                certified by TMDB.
+              </p>
+            )}
             {heroItem && (
               <Link
                 href={`/play?title=${encodeURIComponent(
@@ -299,7 +298,6 @@ function HomeClient() {
                 <Play className='ml-1 h-7 w-7 fill-current' />
               </Link>
             )}
-            <ContinueWatching placement='hero' />
           </section>
 
           <ContinueWatching className='tv-continue-mobile' />

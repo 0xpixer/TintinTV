@@ -514,6 +514,33 @@ html.dark body {
 .tv-nav-links::-webkit-scrollbar {
   display: none;
 }
+.tv-nav-quick-links {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+.tv-nav-quick-link {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+  transition: background 180ms ease, border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+.tv-nav-quick-link:hover,
+.tv-nav-quick-link:focus-visible,
+.tv-nav-quick-link[aria-current='page'] {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.17);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(24px) saturate(180%);
+}
 .tv-nav-actions {
   gap: 5px;
   margin-left: auto;
@@ -522,6 +549,15 @@ html.dark body {
   grid-column: 3;
   grid-row: 1;
   justify-self: end;
+}
+.tv-app-home .tv-nav-quick-links {
+  position: absolute;
+  left: calc(50% + 88px);
+  top: 50%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transform: translateY(-50%);
 }
 .tv-app-home .tv-nav-links {
   grid-column: 1;
@@ -675,29 +711,43 @@ html.dark body {
 }
 
 .tv-hero-content {
-  position: absolute;
-  left: clamp(48px, 8vw, 150px);
-  bottom: clamp(88px, 13vh, 150px);
-  width: min(38vw, 620px);
-  min-height: 0;
-  padding: 0;
+  min-width: 0;
 }
 .tv-hero-copy {
   max-width: 620px;
-  padding: clamp(20px, 2vw, 32px);
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.13);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 18px 60px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(22px) saturate(145%);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.tv-hero-bottom {
+  position: absolute;
+  right: clamp(24px, 3.5vw, 64px);
+  bottom: 16px;
+  left: clamp(24px, 3.5vw, 64px);
+  display: grid;
+  grid-template-columns: minmax(0, 38vw) minmax(0, 36vw);
+  align-items: start;
+  justify-content: space-between;
+  column-gap: clamp(32px, 6vw, 100px);
 }
 .tv-hero-resume {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.tv-hero-attribution {
   position: absolute;
-  right: clamp(30px, 4vw, 72px);
-  top: 50%;
-  width: min(500px, 36vw);
-  transform: translateY(-50%);
+  right: 12px;
+  bottom: 5px;
+  left: 12px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 10px;
+  line-height: 12px;
+  text-align: center;
 }
 .tv-hero-resume-track {
   display: flex;
@@ -998,7 +1048,7 @@ html.dark body {
 @media (max-width: 1100px) {
   .tv-desktop-nav {
     gap: 20px;
-    padding-inline: 24px;
+    padding-inline: clamp(24px, 3.5vw, 64px);
   }
   .tv-nav-link {
     padding-inline: 9px;
@@ -1059,12 +1109,21 @@ html.dark body {
   }
   .tv-hero-content {
     min-height: 490px;
+    display: flex;
+    align-items: flex-end;
     padding: 26px;
-    inset: auto 0 0;
-    width: auto;
+  }
+  .tv-hero-bottom {
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: block;
   }
   .tv-hero-copy {
-    padding: 20px;
+    padding: 0;
+  }
+  .tv-hero-attribution {
+    display: none;
   }
   .tv-hero-play {
     display: none;
