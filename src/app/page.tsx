@@ -115,6 +115,9 @@ function HomeClient() {
   const [loadingMovies, setLoadingMovies] = useState(true);
   const [loadingTvShows, setLoadingTvShows] = useState(true);
   const [loadingVarietyShows, setLoadingVarietyShows] = useState(true);
+  const [categoryErrors, setCategoryErrors] = useState<
+    Partial<Record<'movies' | 'tvShows' | 'varietyShows', string>>
+  >({});
   const [heroBackdrop, setHeroBackdrop] = useState('');
   const [heroOverview, setHeroOverview] = useState('');
   const heroItem = hotMovies[0] ?? hotTvShows[0] ?? hotVarietyShows[0];
@@ -244,14 +247,22 @@ function HomeClient() {
     ) => {
       try {
         const data = await request;
-        if (!active || data.code !== 200) return;
+        if (!active) return;
+        if (data.code !== 200) throw new Error('获取数据失败');
 
         const items = data.list.slice(0, 12);
         setItems(items);
+        setCategoryErrors((previous) => ({ ...previous, [key]: undefined }));
         cache = { ...cache, savedAt: Date.now(), [key]: items };
         writeHomeCategoriesCache(cache);
       } catch (error) {
         console.error(`获取${label}失败:`, error);
+        if (active) {
+          setCategoryErrors((previous) => ({
+            ...previous,
+            [key]: '暂时无法加载，请重试。',
+          }));
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -289,6 +300,45 @@ function HomeClient() {
       active = false;
     };
   }, []);
+
+  const retryCategory = (
+    key: 'movies' | 'tvShows' | 'varietyShows',
+    params: { kind: 'movie' | 'tv'; category: string; type: string },
+    setItems: React.Dispatch<React.SetStateAction<DoubanItem[]>>,
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    label: string
+  ) => {
+    setCategoryErrors((previous) => ({ ...previous, [key]: undefined }));
+    setLoading(true);
+    void (async () => {
+      try {
+        const data = await getDoubanCategories(params);
+        if (data.code !== 200) throw new Error('获取数据失败');
+        const items = data.list.slice(0, 12);
+        setItems(items);
+        setCategoryErrors((previous) => ({ ...previous, [key]: undefined }));
+        const cache = readHomeCategoriesCache() || {
+          savedAt: Date.now(),
+          movies: [],
+          tvShows: [],
+          varietyShows: [],
+        };
+        writeHomeCategoriesCache({
+          ...cache,
+          savedAt: Date.now(),
+          [key]: items,
+        });
+      } catch (error) {
+        console.error(`获取${label}失败:`, error);
+        setCategoryErrors((previous) => ({
+          ...previous,
+          [key]: '暂时无法加载，请重试。',
+        }));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  };
 
   return (
     <PageLayout>
@@ -395,7 +445,7 @@ function HomeClient() {
                 <ChevronRight className='w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300' />
               </Link>
             </div>
-            <ScrollableRow>
+            <ScrollableRow className='tv-home-row'>
               {loadingMovies
                 ? // 加载状态显示现代骨架屏
                   Array.from({ length: 12 }).map((_, index) => (
@@ -426,6 +476,20 @@ function HomeClient() {
                     </div>
                   ))}
             </ScrollableRow>
+            {categoryErrors.movies && hotMovies.length === 0 && (
+              <HomeCategoryError
+                message={categoryErrors.movies}
+                onRetry={() =>
+                  retryCategory(
+                    'movies',
+                    { kind: 'movie', category: '热门', type: '全部' },
+                    setHotMovies,
+                    setLoadingMovies,
+                    '热门电影'
+                  )
+                }
+              />
+            )}
           </section>
 
           {/* 热门剧集 */}
@@ -442,7 +506,7 @@ function HomeClient() {
                 <ChevronRight className='w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300' />
               </Link>
             </div>
-            <ScrollableRow>
+            <ScrollableRow className='tv-home-row'>
               {loadingTvShows
                 ? // 加载状态显示现代骨架屏
                   Array.from({ length: 12 }).map((_, index) => (
@@ -473,6 +537,20 @@ function HomeClient() {
                     </div>
                   ))}
             </ScrollableRow>
+            {categoryErrors.tvShows && hotTvShows.length === 0 && (
+              <HomeCategoryError
+                message={categoryErrors.tvShows}
+                onRetry={() =>
+                  retryCategory(
+                    'tvShows',
+                    { kind: 'tv', category: 'tv', type: 'tv' },
+                    setHotTvShows,
+                    setLoadingTvShows,
+                    '热门剧集'
+                  )
+                }
+              />
+            )}
           </section>
 
           {/* 热门综艺 */}
@@ -489,7 +567,7 @@ function HomeClient() {
                 <ChevronRight className='w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300' />
               </Link>
             </div>
-            <ScrollableRow>
+            <ScrollableRow className='tv-home-row'>
               {loadingVarietyShows
                 ? // 加载状态显示现代骨架屏
                   Array.from({ length: 12 }).map((_, index) => (
@@ -520,10 +598,45 @@ function HomeClient() {
                     </div>
                   ))}
             </ScrollableRow>
+            {categoryErrors.varietyShows && hotVarietyShows.length === 0 && (
+              <HomeCategoryError
+                message={categoryErrors.varietyShows}
+                onRetry={() =>
+                  retryCategory(
+                    'varietyShows',
+                    { kind: 'tv', category: 'show', type: 'show' },
+                    setHotVarietyShows,
+                    setLoadingVarietyShows,
+                    '热门综艺'
+                  )
+                }
+              />
+            )}
           </section>
         </div>
       </div>
     </PageLayout>
+  );
+}
+
+function HomeCategoryError({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className='flex items-center gap-3 px-1 py-3 text-sm text-slate-400'>
+      <span>{message}</span>
+      <button
+        type='button'
+        onClick={onRetry}
+        className='text-white underline underline-offset-4 hover:text-white/75'
+      >
+        重试
+      </button>
+    </div>
   );
 }
 

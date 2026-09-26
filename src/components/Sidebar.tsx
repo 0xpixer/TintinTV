@@ -47,20 +47,6 @@ export default function Sidebar({ activePath }: SidebarProps) {
           />
         </span>
       </Link>
-      <nav className='tv-nav-quick-links' aria-label='快捷导航'>
-        {quickItems.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className='tv-nav-quick-link'
-            aria-label={label}
-            title={label}
-            aria-current={current === href ? 'page' : undefined}
-          >
-            <Icon className='h-[18px] w-[18px]' aria-hidden='true' />
-          </Link>
-        ))}
-      </nav>
       <nav className='tv-nav-links' aria-label='主要导航'>
         {primaryItems.map(({ href, label, icon: Icon }) => {
           const [path, query] = href.split('?');
@@ -82,6 +68,20 @@ export default function Sidebar({ activePath }: SidebarProps) {
         })}
       </nav>
       <div className='tv-nav-actions'>
+        <nav className='tv-nav-quick-links' aria-label='快捷导航'>
+          {quickItems.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className='tv-nav-quick-link'
+              aria-label={label}
+              title={label}
+              aria-current={current === href ? 'page' : undefined}
+            >
+              <Icon className='h-[18px] w-[18px]' aria-hidden='true' />
+            </Link>
+          ))}
+        </nav>
         <ThemeToggle />
         <UserMenu />
       </div>

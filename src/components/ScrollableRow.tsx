@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 interface ScrollableRowProps {
   children: React.ReactNode;
   scrollDistance?: number;
+  className?: string;
 }
 
 export default function ScrollableRow({
   children,
   scrollDistance = 1000,
+  className = '',
 }: ScrollableRowProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showLeftScroll, setShowLeftScroll] = useState(false);
@@ -92,7 +94,7 @@ export default function ScrollableRow({
 
   return (
     <div
-      className='relative'
+      className={`relative ${className}`}
       onMouseEnter={() => {
         setIsHovered(true);
         // 当鼠标进入时重新检查一次

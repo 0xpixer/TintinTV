@@ -14,6 +14,54 @@ import DoubanSelector from '@/components/DoubanSelector';
 import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
 
+const CATEGORY_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+
+function getCategoryCacheKey(params: {
+  kind: string;
+  category: string;
+  type: string;
+  pageLimit: number;
+  pageStart: number;
+}) {
+  const identity = [
+    params.kind,
+    params.category,
+    params.type,
+    params.pageLimit,
+    params.pageStart,
+  ].join('|');
+  return `tintintv_douban_category_${encodeURIComponent(identity)}`;
+}
+
+function readCategoryCache(key: string): DoubanItem[] | null {
+  try {
+    const value = localStorage.getItem(key);
+    if (!value) return null;
+    const cache = JSON.parse(value) as {
+      savedAt: number;
+      list: DoubanItem[];
+    };
+    if (
+      !cache.savedAt ||
+      Date.now() - cache.savedAt > CATEGORY_CACHE_MAX_AGE ||
+      !Array.isArray(cache.list)
+    ) {
+      return null;
+    }
+    return cache.list;
+  } catch {
+    return null;
+  }
+}
+
+function writeCategoryCache(key: string, list: DoubanItem[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), list }));
+  } catch {
+    // The page remains usable if browser storage is unavailable.
+  }
+}
+
 function DoubanPageClient() {
   const searchParams = useSearchParams();
   const [doubanData, setDoubanData] = useState<DoubanItem[]>([]);
@@ -21,10 +69,12 @@ function DoubanPageClient() {
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [selectorsReady, setSelectorsReady] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initialRequestRef = useRef(0);
 
   const type = searchParams.get('type') || 'movie';
 
@@ -112,21 +162,43 @@ function DoubanPageClient() {
 
   // 防抖的数据加载函数
   const loadInitialData = useCallback(async () => {
-    try {
+    const params = getRequestParams(0);
+    const cacheKey = getCategoryCacheKey(params);
+    const cachedItems = readCategoryCache(cacheKey);
+    const requestId = ++initialRequestRef.current;
+    setLoadError('');
+    if (cachedItems?.length) {
+      setDoubanData(cachedItems);
+      setHasMore(cachedItems.length === params.pageLimit);
+      setLoading(false);
+    } else {
       setLoading(true);
-      const data = await getDoubanCategories(getRequestParams(0));
+    }
+
+    try {
+      const data = await getDoubanCategories(params);
+      if (requestId !== initialRequestRef.current) return;
 
       if (data.code === 200) {
-        setDoubanData(data.list);
-        setHasMore(data.list.length === 25);
-        setLoading(false);
+        if (data.list.length || !cachedItems?.length) {
+          setDoubanData(data.list);
+          setHasMore(data.list.length === params.pageLimit);
+        }
+        if (data.list.length) writeCategoryCache(cacheKey, data.list);
       } else {
         throw new Error(data.message || '获取数据失败');
       }
     } catch (err) {
       console.error(err);
+      if (requestId === initialRequestRef.current && !cachedItems?.length) {
+        setLoadError('内容暂时无法加载，请检查网络后重试。');
+        setDoubanData([]);
+        setHasMore(false);
+      }
+    } finally {
+      if (requestId === initialRequestRef.current) setLoading(false);
     }
-  }, [type, primarySelection, secondarySelection, getRequestParams]);
+  }, [getRequestParams]);
 
   // 只在选择器准备好后才加载数据
   useEffect(() => {
@@ -298,22 +370,35 @@ function DoubanPageClient() {
         <div className='mt-8 overflow-visible'>
           {/* 内容网格 */}
           <div className='grid grid-cols-3 gap-x-2 gap-y-12 px-0 sm:grid-cols-[repeat(auto-fit,minmax(160px,1fr))] sm:gap-x-8 sm:gap-y-20 sm:px-2'>
-            {loading || !selectorsReady
-              ? // 显示骨架屏
-                skeletonData.map((index) => <DoubanCardSkeleton key={index} />)
-              : // 显示实际数据
-                doubanData.map((item, index) => (
-                  <div key={`${item.title}-${index}`} className='w-full'>
-                    <VideoCard
-                      from='douban'
-                      title={item.title}
-                      poster={item.poster}
-                      douban_id={item.id}
-                      rate={item.rate}
-                      year={item.year}
-                    />
-                  </div>
-                ))}
+            {loadError && !loading && doubanData.length === 0 ? (
+              <div className='col-span-full flex flex-col items-center gap-4 py-16 text-center text-slate-300'>
+                <p>{loadError}</p>
+                <button
+                  type='button'
+                  onClick={() => void loadInitialData()}
+                  className='tv-glass-icon-button !h-auto !w-auto px-5 py-2 text-sm'
+                >
+                  重试
+                </button>
+              </div>
+            ) : loading || !selectorsReady ? (
+              // 显示骨架屏
+              skeletonData.map((index) => <DoubanCardSkeleton key={index} />)
+            ) : (
+              // 显示实际数据
+              doubanData.map((item, index) => (
+                <div key={`${item.title}-${index}`} className='w-full'>
+                  <VideoCard
+                    from='douban'
+                    title={item.title}
+                    poster={item.poster}
+                    douban_id={item.id}
+                    rate={item.rate}
+                    year={item.year}
+                  />
+                </div>
+              ))
+            )}
           </div>
 
           {/* 加载更多指示器 */}
@@ -347,7 +432,7 @@ function DoubanPageClient() {
           )}
 
           {/* 空状态 */}
-          {!loading && doubanData.length === 0 && (
+          {!loading && !loadError && doubanData.length === 0 && (
             <div className='rounded-2xl border border-dashed border-slate-300 bg-white/45 py-12 text-center text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400'>
               暂无相关内容
             </div>

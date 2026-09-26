@@ -522,14 +522,10 @@ html.dark body {
   display: none;
 }
 .tv-nav-quick-links {
-  position: absolute;
-  left: calc(50% + 88px);
-  top: 50%;
   display: flex;
   flex: none;
   align-items: center;
   gap: 4px;
-  transform: translateY(-50%);
 }
 .tv-nav-quick-link {
   display: inline-flex;
@@ -556,16 +552,13 @@ html.dark body {
   grid-column: 3;
   grid-row: 1;
   justify-self: end;
-  gap: 5px;
+  gap: 8px;
   margin-left: auto;
 }
 .tv-app-home .tv-nav-actions {
   grid-column: 3;
   grid-row: 1;
   justify-self: end;
-}
-.tv-app-home .tv-nav-quick-links {
-  left: calc(50% + 88px);
 }
 .tv-app-home .tv-nav-links {
   grid-column: 1;
@@ -733,7 +726,7 @@ html.dark body {
 .tv-hero-bottom {
   position: absolute;
   right: clamp(24px, 3.5vw, 64px);
-  bottom: 16px;
+  bottom: 25px;
   left: clamp(24px, 3.5vw, 64px);
   display: grid;
   grid-template-columns: minmax(0, 38vw) minmax(0, 36vw);
@@ -748,14 +741,13 @@ html.dark body {
 }
 .tv-hero-attribution {
   position: absolute;
-  right: 12px;
+  right: clamp(24px, 3.5vw, 64px);
   bottom: 5px;
-  left: 12px;
   margin: 0;
   color: rgba(255, 255, 255, 0.68);
   font-size: 10px;
   line-height: 12px;
-  text-align: center;
+  text-align: right;
 }
 .tv-hero-resume-track {
   display: flex;
@@ -800,6 +792,12 @@ html.dark body {
 
 .tv-home section:not(.tv-hero) {
   margin-bottom: 38px;
+}
+.tv-home section:not(.tv-hero) {
+  padding-inline: clamp(16px, 3.5vw, 64px);
+}
+.tv-home-row > div:first-child {
+  padding-inline: 0;
 }
 .tv-home section h2,
 .tv-library h1,
@@ -1093,6 +1091,9 @@ html.dark body {
   }
   .tv-app-home .tv-home {
     padding: 18px 16px 40px;
+  }
+  .tv-home section:not(.tv-hero) {
+    padding-inline: 0;
   }
   .tv-app-home .tv-desktop-nav {
     position: sticky;
