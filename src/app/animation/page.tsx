@@ -48,13 +48,26 @@ function writeCache(view: AnimationView, list: DoubanItem[]) {
 async function fetchAnimationPage(view: AnimationView, start: number) {
   let data: DoubanResult;
   if (view === 'series') {
-    data = await getDoubanCategories({
-      kind: 'tv',
-      category: 'tv',
-      type: 'tv_animation',
-      pageLimit: PAGE_SIZE,
-      pageStart: start,
-    });
+    try {
+      data = await getDoubanCategories({
+        kind: 'tv',
+        category: 'tv',
+        type: 'tv_animation',
+        pageLimit: PAGE_SIZE,
+        pageStart: start,
+      });
+      if (!data.list?.length) throw new Error('动漫分类暂无内容');
+    } catch {
+      const params = new URLSearchParams({
+        type: 'tv',
+        tag: '日本动画',
+        pageSize: String(PAGE_SIZE),
+        pageStart: String(start),
+      });
+      const response = await fetch(`/api/douban?${params}`);
+      if (!response.ok) throw new Error('动漫剧集加载失败');
+      data = (await response.json()) as DoubanResult;
+    }
   } else {
     const params = new URLSearchParams({
       type: 'movie',
