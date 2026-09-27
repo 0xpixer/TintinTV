@@ -68,6 +68,7 @@ export default function Sidebar({ activePath }: SidebarProps) {
               key={href}
               href={href}
               className='tv-nav-link'
+              title={label}
               aria-current={active ? 'page' : undefined}
             >
               <Icon className='h-[17px] w-[17px]' aria-hidden='true' />
