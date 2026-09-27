@@ -2,69 +2,11 @@ import { NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
 import {
-  buildDoubanFallbackUrl,
-  getDoubanFallbackQuery,
-} from '@/lib/douban-fallback';
-import { readDoubanCache, writeDoubanCache } from '@/lib/douban-server-cache';
-import { DoubanItem, DoubanResult } from '@/lib/types';
-
-interface DoubanCategoryApiResponse {
-  total: number;
-  items: Array<{
-    id: string;
-    title: string;
-    card_subtitle: string;
-    pic: {
-      large: string;
-      normal: string;
-    };
-    rating: {
-      value: number;
-    };
-  }>;
-}
-
-interface DoubanMovieApiResponse {
-  subjects: Array<{
-    id: string;
-    title: string;
-    cover: string;
-    rate: string;
-  }>;
-}
-
-async function fetchDoubanData<T>(url: string): Promise<T> {
-  // 添加超时控制
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
-
-  // 设置请求选项，包括信号和头部
-  const fetchOptions = {
-    signal: controller.signal,
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      Referer: 'https://movie.douban.com/',
-      Accept: 'application/json, text/plain, */*',
-      Origin: 'https://movie.douban.com',
-    },
-  };
-
-  try {
-    // 尝试直接访问豆瓣API
-    const response = await fetch(url, fetchOptions);
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    return (await response.json()) as T;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
-  }
-}
+  getDoubanCategoryCacheKey,
+  refreshDoubanCategory,
+} from '@/lib/douban-categories.server';
+import { readDoubanCache } from '@/lib/douban-server-cache';
+import { DoubanResult } from '@/lib/types';
 
 export const runtime = 'edge';
 
@@ -107,58 +49,21 @@ export async function GET(request: Request) {
     );
   }
 
-  const target = `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=${pageStart}&limit=${pageLimit}&category=${category}&type=${type}`;
-  const cacheKey = [kind, category, type, pageLimit, pageStart]
-    .map(encodeURIComponent)
-    .join(':');
+  const params = {
+    kind: kind as 'movie' | 'tv',
+    category,
+    type,
+    pageLimit,
+    pageStart,
+  };
+  const cacheKey = getDoubanCategoryCacheKey(params);
   const cached = await readDoubanCache(cacheKey);
   if (cached?.fresh) return categoryResponse(cached.result);
 
   try {
-    // 调用豆瓣 API
-    const doubanData = await fetchDoubanData<DoubanCategoryApiResponse>(target);
-
-    // 转换数据格式
-    const list: DoubanItem[] = doubanData.items.map((item) => ({
-      id: item.id,
-      title: item.title,
-      poster: item.pic?.normal || item.pic?.large || '',
-      rate: item.rating?.value ? item.rating.value.toFixed(1) : '',
-      year: item.card_subtitle?.match(/(\d{4})/)?.[1] || '',
-    }));
-
-    const response: DoubanResult = {
-      code: 200,
-      message: '获取成功',
-      list: list,
-    };
-
-    await writeDoubanCache(cacheKey, response);
+    const response = await refreshDoubanCategory(params);
     return categoryResponse(response);
   } catch (error) {
-    const fallbackQuery = getDoubanFallbackQuery(kind, category, type);
-    if (fallbackQuery) {
-      try {
-        const fallback = await fetchDoubanData<DoubanMovieApiResponse>(
-          buildDoubanFallbackUrl(fallbackQuery, pageLimit, pageStart)
-        );
-        const list: DoubanItem[] = fallback.subjects.map((item) => ({
-          id: item.id,
-          title: item.title,
-          poster: item.cover,
-          rate: item.rate,
-          year: '',
-        }));
-        if (list.length) {
-          const response = { code: 200, message: '获取成功', list };
-          await writeDoubanCache(cacheKey, response);
-          return categoryResponse(response);
-        }
-      } catch (fallbackError) {
-        // eslint-disable-next-line no-console
-        console.error('豆瓣分类备用接口失败:', fallbackError);
-      }
-    }
     if (cached) return categoryResponse(cached.result);
     return NextResponse.json(
       { error: '获取豆瓣数据失败', details: (error as Error).message },

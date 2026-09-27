@@ -3,21 +3,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/lib/db';
+import { prewarmDoubanCategories } from '@/lib/douban-prewarm';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
 import { SearchResult } from '@/lib/types';
 
 export const runtime = 'edge';
+export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
   console.log(request.url);
+  if (
+    !process.env.CRON_SECRET ||
+    request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`
+  ) {
+    return NextResponse.json({ success: false }, { status: 401 });
+  }
+
   try {
     console.log('Cron job triggered:', new Date().toISOString());
 
-    refreshRecordAndFavorites();
+    const douban = await prewarmDoubanCategories();
+    void refreshRecordAndFavorites();
+
+    if (douban.succeeded === 0) {
+      throw new Error('豆瓣分类预热全部失败');
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Cron job executed successfully',
+      douban,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

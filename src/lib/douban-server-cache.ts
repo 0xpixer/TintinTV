@@ -8,7 +8,7 @@ interface CachedDoubanResult {
 }
 
 const CACHE_TTL_SECONDS = 30 * 24 * 60 * 60;
-const FRESH_MS = 2 * 60 * 60 * 1000;
+const FRESH_MS = 26 * 60 * 60 * 1000;
 
 let client: Redis | null | undefined;
 
