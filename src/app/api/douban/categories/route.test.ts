@@ -148,6 +148,59 @@ describe('Douban category route', () => {
     expect(writeDoubanCache).toHaveBeenCalled();
   });
 
+  it.each([
+    {
+      label: '最新电影',
+      query: 'kind=movie&category=%E6%9C%80%E6%96%B0&type=%E5%85%A8%E9%83%A8',
+      expectedTag: '%E7%83%AD%E9%97%A8',
+      expectedSort: 'time',
+    },
+    {
+      label: '华语电影',
+      query: 'kind=movie&category=%E7%83%AD%E9%97%A8&type=%E5%8D%8E%E8%AF%AD',
+      expectedTag: '%E5%8D%8E%E8%AF%AD',
+      expectedSort: 'recommend',
+    },
+    {
+      label: '国产剧',
+      query: 'kind=tv&category=tv&type=tv_domestic',
+      expectedTag: '%E5%9B%BD%E4%BA%A7%E5%89%A7',
+      expectedSort: 'recommend',
+    },
+  ])(
+    '当主分类接口失败时会为 $label 使用备用查询',
+    async ({ query, expectedTag, expectedSort }) => {
+      const fetchMock = jest
+        .fn()
+        .mockRejectedValueOnce(new Error('primary unavailable'))
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            subjects: [
+              {
+                id: 'fallback-item',
+                title: 'Fallback item',
+                cover: 'https://example.com/poster.jpg',
+                rate: '8.1',
+              },
+            ],
+          }),
+        });
+      global.fetch = fetchMock as typeof fetch;
+      mockedGetCacheTime.mockResolvedValue(3600);
+
+      const response = await GET(
+        new Request(`https://example.com/api/douban/categories?${query}`)
+      );
+
+      expect(response.status).toBe(200);
+      expect((await response.json()).list[0].title).toBe('Fallback item');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[1][0]).toContain(`tag=${expectedTag}`);
+      expect(fetchMock.mock.calls[1][0]).toContain(`sort=${expectedSort}`);
+    }
+  );
+
   it('serves stale shared data when both Douban sources fail', async () => {
     jest.spyOn(console, 'error').mockImplementation();
     mockedReadCache.mockResolvedValue({

@@ -1,3 +1,7 @@
+import {
+  buildDoubanFallbackUrl,
+  getDoubanFallbackQuery,
+} from './douban-fallback';
 import { DoubanItem, DoubanResult } from './types';
 import { getDoubanProxyUrl } from './utils';
 
@@ -26,6 +30,15 @@ interface DoubanCategoryApiResponse {
     rating: {
       value: number;
     };
+  }>;
+}
+
+interface DoubanMovieApiResponse {
+  subjects: Array<{
+    id: string;
+    title: string;
+    cover: string;
+    rate: string;
   }>;
 }
 
@@ -123,6 +136,32 @@ export async function fetchDoubanCategories(
       list: list,
     };
   } catch (error) {
+    const fallbackQuery = getDoubanFallbackQuery(kind, category, type);
+    if (fallbackQuery) {
+      try {
+        const fallbackResponse = await fetchWithTimeout(
+          buildDoubanFallbackUrl(fallbackQuery, pageLimit, pageStart)
+        );
+        if (!fallbackResponse.ok) {
+          throw new Error(`HTTP error! Status: ${fallbackResponse.status}`);
+        }
+
+        const fallbackData: DoubanMovieApiResponse =
+          await fallbackResponse.json();
+        const list: DoubanItem[] = fallbackData.subjects.map((item) => ({
+          id: item.id,
+          title: item.title,
+          poster: item.cover,
+          rate: item.rate,
+          year: '',
+        }));
+        if (list.length) {
+          return { code: 200, message: '获取成功', list };
+        }
+      } catch {
+        // Keep the primary error so callers receive one consistent failure.
+      }
+    }
     throw new Error(`获取豆瓣分类数据失败: ${(error as Error).message}`);
   }
 }

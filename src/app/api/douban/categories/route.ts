@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
+import {
+  buildDoubanFallbackUrl,
+  getDoubanFallbackQuery,
+} from '@/lib/douban-fallback';
 import { readDoubanCache, writeDoubanCache } from '@/lib/douban-server-cache';
 import { DoubanItem, DoubanResult } from '@/lib/types';
 
@@ -132,30 +136,11 @@ export async function GET(request: Request) {
     await writeDoubanCache(cacheKey, response);
     return categoryResponse(response);
   } catch (error) {
-    const fallbackTag =
-      kind === 'movie' && category === '热门' && type === '全部'
-        ? '热门'
-        : kind === 'tv' && category === 'tv' && type === 'tv'
-        ? '热门'
-        : kind === 'tv' && category === 'show' && type === 'show'
-        ? '综艺'
-        : kind === 'tv' && category === 'tv' && type === 'tv_animation'
-        ? '日本动画'
-        : null;
-    if (fallbackTag) {
+    const fallbackQuery = getDoubanFallbackQuery(kind, category, type);
+    if (fallbackQuery) {
       try {
-        const fallbackUrl = new URL(
-          'https://movie.douban.com/j/search_subjects'
-        );
-        fallbackUrl.search = new URLSearchParams({
-          type: kind,
-          tag: fallbackTag,
-          sort: 'recommend',
-          page_limit: String(pageLimit),
-          page_start: String(pageStart),
-        }).toString();
         const fallback = await fetchDoubanData<DoubanMovieApiResponse>(
-          fallbackUrl.toString()
+          buildDoubanFallbackUrl(fallbackQuery, pageLimit, pageStart)
         );
         const list: DoubanItem[] = fallback.subjects.map((item) => ({
           id: item.id,
