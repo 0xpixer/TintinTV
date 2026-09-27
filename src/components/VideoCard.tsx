@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { ContentKind } from '@/lib/content-kind';
 import {
   deleteFavorite,
   deletePlayRecord,
@@ -40,6 +41,7 @@ interface VideoCardProps {
   onDelete?: () => void;
   rate?: string;
   items?: SearchResult[];
+  contentKind?: ContentKind;
 }
 
 export default function VideoCard({
@@ -58,6 +60,7 @@ export default function VideoCard({
   onDelete,
   rate,
   items,
+  contentKind,
 }: VideoCardProps) {
   const router = useRouter();
   const [favorited, setFavorited] = useState(false);
@@ -227,11 +230,12 @@ export default function VideoCard({
   const handleClick = useCallback(() => {
     if (from === 'douban' && douban_id) {
       // Douban cards go directly to play page, which will search for sources
-      router.push(
-        `/play?title=${encodeURIComponent(
-          actualTitle
-        )}&year=${encodeURIComponent(year || '')}`
-      );
+      const params = new URLSearchParams({
+        title: actualTitle,
+        year: year || '',
+      });
+      if (contentKind) params.set('kind', contentKind);
+      router.push(`/play?${params}`);
     } else if (from === 'search' && isAggregate && items) {
       const params = new URLSearchParams();
       if (query) params.set('q', query);
@@ -256,6 +260,7 @@ export default function VideoCard({
     douban_id,
     actualTitle,
     year,
+    contentKind,
     isAggregate,
     items,
     query,

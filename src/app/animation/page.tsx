@@ -212,6 +212,9 @@ function AnimationPageClient() {
                 <div key={item.id} className='w-full'>
                   <VideoCard
                     from='douban'
+                    contentKind={
+                      view === 'movie' ? 'animation-movie' : 'animation-series'
+                    }
                     title={item.title}
                     poster={item.poster}
                     douban_id={item.id}

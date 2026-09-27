@@ -284,15 +284,15 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   );
 
   return (
-    <div className='md:ml-2 flex h-full flex-col overflow-hidden border-t border-slate-200 px-3 dark:border-white/10'>
+    <div className='flex h-full flex-col overflow-hidden border-t border-slate-200 px-3 dark:border-white/10 md:h-auto md:overflow-visible md:border-t-0 md:px-0'>
       {/* 主要的 Tab 切换 - 无缝融入设计 */}
-      <div className='-mx-3 mb-1 flex flex-shrink-0 border-b border-slate-200 dark:border-white/10'>
+      <div className='-mx-3 mb-1 flex flex-shrink-0 border-b border-slate-200 dark:border-white/10 md:mx-0 md:mb-3'>
         {totalEpisodes > 1 && (
           <button
             type='button'
             aria-pressed={activeTab === 'episodes'}
             onClick={() => setActiveTab('episodes')}
-            className={`min-h-11 flex-1 px-4 py-3 text-center text-sm font-semibold transition-colors duration-200
+            className={`min-h-11 flex-1 px-4 py-3 text-center text-sm font-semibold transition-colors duration-200 md:flex-none md:px-6
               ${
                 activeTab === 'episodes'
                   ? 'text-brand-700 dark:text-brand-300'
@@ -307,7 +307,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           type='button'
           aria-pressed={activeTab === 'sources'}
           onClick={handleSourceTabClick}
-          className={`min-h-11 flex-1 px-4 py-3 text-center text-sm font-semibold transition-colors duration-200
+          className={`min-h-11 flex-1 px-4 py-3 text-center text-sm font-semibold transition-colors duration-200 md:flex-none md:px-6
             ${
               activeTab === 'sources'
                 ? 'text-brand-700 dark:text-brand-300'
@@ -323,7 +323,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
       {activeTab === 'episodes' && (
         <>
           {/* 分类标签 */}
-          <div className='flex items-center gap-4 mb-4 border-b border-gray-300 dark:border-gray-700 -mx-6 px-6 flex-shrink-0'>
+          <div className='flex items-center gap-4 mb-4 border-b border-gray-300 dark:border-gray-700 -mx-6 px-6 flex-shrink-0 md:hidden'>
             <div className='flex-1 overflow-x-auto' ref={categoryContainerRef}>
               <div className='flex gap-2 min-w-max'>
                 {categories.map((label, idx) => {
@@ -367,7 +367,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           </div>
 
           {/* 集数网格 */}
-          <div className='grid grid-cols-[repeat(auto-fill,minmax(40px,1fr))] auto-rows-[40px] gap-x-3 gap-y-3 overflow-y-auto h-full pb-4'>
+          <div className='grid grid-cols-[repeat(auto-fill,minmax(40px,1fr))] auto-rows-[40px] gap-x-3 gap-y-3 overflow-y-auto h-full pb-4 md:hidden'>
             {(() => {
               const len = currentEnd - currentStart + 1;
               const episodes = Array.from({ length: len }, (_, i) =>
@@ -392,12 +392,35 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
               );
             })}
           </div>
+          <div
+            className='tv-episode-strip hidden gap-2 overflow-x-auto pb-3 md:flex'
+            aria-label='选择集数'
+          >
+            {Array.from({ length: totalEpisodes }, (_, index) => index + 1).map(
+              (episodeNumber) => (
+                <button
+                  key={episodeNumber}
+                  type='button'
+                  onClick={() => handleEpisodeClick(episodeNumber - 1)}
+                  aria-current={episodeNumber === value ? 'true' : undefined}
+                  aria-label={`第 ${episodeNumber} 集`}
+                  className={`h-11 min-w-11 flex-none rounded-md px-3 text-sm font-medium transition-colors ${
+                    episodeNumber === value
+                      ? 'bg-brand-500 text-white dark:text-[#101114]'
+                      : 'bg-slate-200 text-slate-800 hover:bg-slate-300 dark:bg-white/10 dark:text-white dark:hover:bg-white/20'
+                  }`}
+                >
+                  {episodeNumber}
+                </button>
+              )
+            )}
+          </div>
         </>
       )}
 
       {/* 换源 Tab 内容 */}
       {activeTab === 'sources' && (
-        <div className='flex flex-col h-full mt-4'>
+        <div className='flex flex-col h-full mt-4 md:mt-0 md:h-auto'>
           {sourceSearchLoading && (
             <div className='flex items-center justify-center py-8'>
               <LoaderCircle
@@ -443,7 +466,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           {!sourceSearchLoading &&
             !sourceSearchError &&
             availableSources.length > 0 && (
-              <div className='flex-1 overflow-y-auto pb-4'>
+              <div className='flex-1 overflow-y-auto pb-4 md:flex md:gap-3 md:overflow-x-auto md:overflow-y-hidden'>
                 {[...availableSources]
                   .sort((a, b) => {
                     const aIsCurrent =
@@ -469,7 +492,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                         onClick={() =>
                           !isCurrentSource && handleSourceClick(source)
                         }
-                        className={`relative flex w-full items-start gap-3 border-b border-slate-200 px-2 py-3 text-left transition-colors duration-200 dark:border-white/10
+                        className={`relative flex w-full items-start gap-3 border-b border-slate-200 px-2 py-3 text-left transition-colors duration-200 dark:border-white/10 md:w-64 md:flex-none md:rounded-md md:border md:border-slate-200 md:px-3 dark:md:border-white/10
                       ${
                         isCurrentSource
                           ? 'bg-brand-50 dark:bg-brand-400/10'
@@ -588,7 +611,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                       </button>
                     );
                   })}
-                <div className='flex-shrink-0 mt-auto pt-2 border-t border-gray-400 dark:border-gray-700'>
+                <div className='flex-shrink-0 mt-auto pt-2 border-t border-gray-400 dark:border-gray-700 md:hidden'>
                   <button
                     onClick={() => {
                       if (videoTitle) {

@@ -8,13 +8,12 @@ import {
   CircleAlert,
   Heart,
   LoaderCircle,
-  PanelRightClose,
-  PanelRightOpen,
   RotateCcw,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
+import { resolveContentKind } from '@/lib/content-kind';
 import {
   deleteFavorite,
   deletePlayRecord,
@@ -32,6 +31,7 @@ import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 
 import EpisodeSelector from '@/components/EpisodeSelector';
 import PageLayout from '@/components/PageLayout';
+import PlayRecommendations from '@/components/PlayRecommendations';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 属性
 declare global {
@@ -157,10 +157,6 @@ function PlayPageClient() {
   const [precomputedVideoInfo, setPrecomputedVideoInfo] = useState<
     Map<string, { quality: string; loadSpeed: string; pingTime: number }>
   >(new Map());
-
-  // 折叠状态（仅在 lg 及以上屏幕有效）
-  const [isEpisodeSelectorCollapsed, setIsEpisodeSelectorCollapsed] =
-    useState(false);
 
   // 换源加载状态
   const [isVideoLoading, setIsVideoLoading] = useState(true);
@@ -1238,188 +1234,143 @@ function PlayPageClient() {
     );
   }
 
+  const recommendationKind = resolveContentKind(
+    searchParams.get('kind'),
+    searchType,
+    detail
+  );
+
   return (
     <PageLayout activePath='/play'>
       <div className='tv-play flex flex-col gap-3'>
-        {/* 第一行：影片标题 */}
-        <div className='flex items-center gap-3 py-1'>
-          <button
-            type='button'
-            onClick={() => router.back()}
-            aria-label='返回上一页'
-            className='tv-back-button hidden h-9 w-9 items-center justify-center rounded-md md:inline-flex'
-          >
-            <ArrowLeft className='h-5 w-5' />
-          </button>
-          <h1 className='tv-now-playing text-xl font-semibold'>
+        <div className='flex items-center gap-3 py-1 md:hidden'>
+          <p className='tv-now-playing text-xl font-semibold'>
             {videoTitle || '影片标题'}
             {totalEpisodes > 1 && (
               <span className='text-gray-500 dark:text-gray-400'>
                 {` > 第 ${currentEpisodeIndex + 1} 集`}
               </span>
             )}
-          </h1>
+          </p>
         </div>
-        {/* 第二行：播放器和选集 */}
-        <div className='space-y-2'>
-          {/* 折叠控制 - 仅在 lg 及以上屏幕显示 */}
-          <div className='hidden lg:flex justify-end'>
-            <button
-              onClick={() =>
-                setIsEpisodeSelectorCollapsed(!isEpisodeSelectorCollapsed)
-              }
-              className='tv-panel-toggle group relative flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all duration-200'
-              title={
-                isEpisodeSelectorCollapsed ? '显示选集面板' : '隐藏选集面板'
-              }
-            >
-              {isEpisodeSelectorCollapsed ? (
-                <PanelRightOpen className='h-4 w-4' />
-              ) : (
-                <PanelRightClose className='h-4 w-4' />
-              )}
-              <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>
-                {isEpisodeSelectorCollapsed ? '显示' : '隐藏'}
-              </span>
-            </button>
+        <div className='tv-player-frame min-w-0'>
+          <div className='relative w-full overflow-hidden bg-black'>
+            <video
+              ref={videoRef}
+              className='bg-black w-full h-full object-contain overflow-hidden'
+              controls
+              playsInline
+              webkit-playsinline='true'
+              x-webkit-airplay='allow'
+              preload='metadata'
+            />
+            {isVideoLoading && (
+              <div className='absolute inset-0 z-[500] flex items-center justify-center rounded-xl bg-black/85 px-5 text-white'>
+                <div
+                  role='status'
+                  aria-live='polite'
+                  className='flex items-center gap-3 text-sm font-medium'
+                >
+                  <LoaderCircle
+                    className='h-5 w-5 animate-spin text-brand-300'
+                    aria-hidden='true'
+                  />
+                  {videoLoadingStage === 'sourceChanging'
+                    ? '正在切换播放源...'
+                    : '视频加载中...'}
+                </div>
+              </div>
+            )}
           </div>
+        </div>
 
-          <div
-            className={`play-content-grid grid gap-4 lg:items-stretch transition-all duration-300 ease-in-out ${
-              isEpisodeSelectorCollapsed ? 'play-content-grid--collapsed' : ''
-            }`}
-          >
-            {/* 播放器 */}
-            <div className='tv-player-frame min-w-0 transition-all duration-300 ease-in-out'>
-              <div
-                className='relative w-full overflow-hidden bg-black'
-                style={{
-                  aspectRatio: '16 / 9',
-                  maxHeight: 'calc(100vh - 12rem)',
-                }}
-              >
-                <video
-                  ref={videoRef}
-                  className='bg-black w-full h-full object-contain overflow-hidden'
-                  controls
-                  playsInline
-                  webkit-playsinline='true'
-                  x-webkit-airplay='allow'
-                  preload='metadata'
-                />
+        <div className='tv-play-controls tv-episode-panel min-w-0'>
+          <EpisodeSelector
+            totalEpisodes={totalEpisodes}
+            value={currentEpisodeIndex + 1}
+            onChange={handleEpisodeChange}
+            onSourceChange={handleSourceChange}
+            currentSource={currentSource}
+            currentId={currentId}
+            videoTitle={searchTitle || videoTitle}
+            availableSources={availableSources}
+            sourceSearchLoading={sourceSearchLoading}
+            sourceSearchError={sourceSearchError}
+            precomputedVideoInfo={precomputedVideoInfo}
+          />
+        </div>
 
-                {/* 换源加载蒙层 */}
-                {isVideoLoading && (
-                  <div className='absolute inset-0 z-[500] flex items-center justify-center rounded-xl bg-black/85 px-5 text-white'>
-                    <div
-                      role='status'
-                      aria-live='polite'
-                      className='flex items-center gap-3 text-sm font-medium'
-                    >
-                      <LoaderCircle
-                        className='h-5 w-5 animate-spin text-brand-300'
-                        aria-hidden='true'
-                      />
-                      {videoLoadingStage === 'sourceChanging'
-                        ? '正在切换播放源...'
-                        : '视频加载中...'}
-                    </div>
+        <div className='tv-play-details'>
+          <div className='tv-detail-grid grid grid-cols-1 md:grid-cols-4 gap-4'>
+            {/* 文字区 */}
+            <div className='md:col-span-3'>
+              <div className='tv-detail-copy flex flex-col min-h-0'>
+                {/* 标题 */}
+                <h1 className='text-3xl font-semibold mb-2 flex items-center flex-shrink-0 text-left w-full'>
+                  {videoTitle || '影片标题'}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleFavorite();
+                    }}
+                    className='ml-3 flex-shrink-0 hover:opacity-80 transition-opacity'
+                  >
+                    <FavoriteIcon filled={favorited} />
+                  </button>
+                </h1>
+
+                {/* 关键信息行 */}
+                <div className='flex flex-wrap items-center gap-3 text-base mb-4 opacity-80 flex-shrink-0'>
+                  {detail?.class && (
+                    <span className='tv-detail-type font-semibold'>
+                      {detail.class}
+                    </span>
+                  )}
+                  {(detail?.year || videoYear) && (
+                    <span>{detail?.year || videoYear}</span>
+                  )}
+                  {detail?.source_name && (
+                    <span className='border border-gray-500/60 px-2 py-[1px] rounded'>
+                      {detail.source_name}
+                    </span>
+                  )}
+                  {detail?.type_name && <span>{detail.type_name}</span>}
+                </div>
+                {/* 剧情简介 */}
+                {detail?.desc && (
+                  <div
+                    className='mt-0 text-base leading-relaxed opacity-90 overflow-y-auto pr-2 flex-1 min-h-0 scrollbar-hide'
+                    style={{ whiteSpace: 'pre-line' }}
+                  >
+                    {detail.desc}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* 选集和换源 - 在移动端始终显示，在 lg 及以上可折叠 */}
-            <div
-              className={`tv-episode-panel min-w-0 transition-all duration-300 ease-in-out md:overflow-hidden ${
-                isEpisodeSelectorCollapsed
-                  ? 'lg:hidden lg:opacity-0 lg:scale-95'
-                  : 'lg:opacity-100 lg:scale-100'
-              }`}
-            >
-              <EpisodeSelector
-                totalEpisodes={totalEpisodes}
-                value={currentEpisodeIndex + 1}
-                onChange={handleEpisodeChange}
-                onSourceChange={handleSourceChange}
-                currentSource={currentSource}
-                currentId={currentId}
-                videoTitle={searchTitle || videoTitle}
-                availableSources={availableSources}
-                sourceSearchLoading={sourceSearchLoading}
-                sourceSearchError={sourceSearchError}
-                precomputedVideoInfo={precomputedVideoInfo}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 详情展示 */}
-        <div className='tv-detail-grid grid grid-cols-1 md:grid-cols-4 gap-4'>
-          {/* 文字区 */}
-          <div className='md:col-span-3'>
-            <div className='tv-detail-copy flex flex-col min-h-0'>
-              {/* 标题 */}
-              <h2 className='text-3xl font-semibold mb-2 flex items-center flex-shrink-0 text-left w-full'>
-                {videoTitle || '影片标题'}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleFavorite();
-                  }}
-                  className='ml-3 flex-shrink-0 hover:opacity-80 transition-opacity'
-                >
-                  <FavoriteIcon filled={favorited} />
-                </button>
-              </h2>
-
-              {/* 关键信息行 */}
-              <div className='flex flex-wrap items-center gap-3 text-base mb-4 opacity-80 flex-shrink-0'>
-                {detail?.class && (
-                  <span className='tv-detail-type font-semibold'>
-                    {detail.class}
-                  </span>
-                )}
-                {(detail?.year || videoYear) && (
-                  <span>{detail?.year || videoYear}</span>
-                )}
-                {detail?.source_name && (
-                  <span className='border border-gray-500/60 px-2 py-[1px] rounded'>
-                    {detail.source_name}
-                  </span>
-                )}
-                {detail?.type_name && <span>{detail.type_name}</span>}
-              </div>
-              {/* 剧情简介 */}
-              {detail?.desc && (
-                <div
-                  className='mt-0 text-base leading-relaxed opacity-90 overflow-y-auto pr-2 flex-1 min-h-0 scrollbar-hide'
-                  style={{ whiteSpace: 'pre-line' }}
-                >
-                  {detail.desc}
+            {/* 封面展示 */}
+            <div className='hidden md:block md:col-span-1 md:order-first'>
+              <div className='tv-detail-poster-wrap'>
+                <div className='aspect-[2/3] flex items-center justify-center overflow-hidden'>
+                  {videoCover ? (
+                    <img
+                      src={processImageUrl(videoCover)}
+                      alt={videoTitle}
+                      className='w-full h-full object-cover'
+                    />
+                  ) : (
+                    <span className='text-gray-600 dark:text-gray-400'>
+                      封面图片
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* 封面展示 */}
-          <div className='hidden md:block md:col-span-1 md:order-first'>
-            <div className='tv-detail-poster-wrap'>
-              <div className='aspect-[2/3] flex items-center justify-center overflow-hidden'>
-                {videoCover ? (
-                  <img
-                    src={processImageUrl(videoCover)}
-                    alt={videoTitle}
-                    className='w-full h-full object-cover'
-                  />
-                ) : (
-                  <span className='text-gray-600 dark:text-gray-400'>
-                    封面图片
-                  </span>
-                )}
               </div>
             </div>
           </div>
+          <PlayRecommendations
+            kind={recommendationKind}
+            currentTitle={videoTitle}
+          />
         </div>
       </div>
     </PageLayout>
@@ -1451,10 +1402,15 @@ const FavoriteIcon = ({ filled }: { filled: boolean }) => {
   );
 };
 
+function PlayPageRoute() {
+  const searchParams = useSearchParams();
+  return <PlayPageClient key={searchParams.toString()} />;
+}
+
 export default function PlayPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <PlayPageClient />
+      <PlayPageRoute />
     </Suspense>
   );
 }

@@ -390,6 +390,7 @@ function DoubanPageClient() {
                 <div key={`${item.title}-${index}`} className='w-full'>
                   <VideoCard
                     from='douban'
+                    contentKind={type as 'movie' | 'tv' | 'show'}
                     title={item.title}
                     poster={item.poster}
                     douban_id={item.id}

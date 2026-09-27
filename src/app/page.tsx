@@ -467,6 +467,7 @@ function HomeClient() {
                     >
                       <VideoCard
                         from='douban'
+                        contentKind='movie'
                         title={movie.title}
                         poster={movie.poster}
                         douban_id={movie.id}
@@ -528,6 +529,7 @@ function HomeClient() {
                     >
                       <VideoCard
                         from='douban'
+                        contentKind='tv'
                         title={show.title}
                         poster={show.poster}
                         douban_id={show.id}
@@ -589,6 +591,7 @@ function HomeClient() {
                     >
                       <VideoCard
                         from='douban'
+                        contentKind='show'
                         title={show.title}
                         poster={show.poster}
                         douban_id={show.id}
