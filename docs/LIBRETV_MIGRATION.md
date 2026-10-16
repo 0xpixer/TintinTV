@@ -126,3 +126,39 @@ pwa:
 - 先在测试源上验证带签名 URL、旧收藏 ID、分页失败、源停用、签名代理拒绝与相对地址重写。
 - 不把 `src/lib/libretv/types.ts` 的上游类型误当成 TintinTV 账号或 Redis 数据模型。
 - 本次没有修复项目既有的明文密码存储、旧 Android TV 域名或通用图片代理问题。
+
+## 8. 点播广告过滤（2026-10-17）
+
+```yaml
+ui:
+  location: 播放器下方，选集/换源区域上方
+  label: 过滤广告
+  default: enabled
+  persistence: browser localStorage.enable_blockad
+  scope: current browser, not account-wide
+  on_toggle: reload playlist, attempt to resume current time and prior playing state
+  resume_caveat: removing ads shortens the timeline; toggling can shift the corresponding scene
+pipeline:
+  entry: /api/play/manifest?source=<id>&id=<vod_id>&episode=<zero_based>&filter=1
+  disabled: same endpoint with filter=0, preserving every media segment
+  source_authorization: enabled server-configured source plus server-resolved episode
+  nested_playlists: server-signed URL, 6-hour expiration, login required
+  network_safety: public-network checks on every redirect
+  max_manifest_bytes: 1048576
+  upstream_timeout_seconds: 12
+  detail_cache_seconds: 60
+  media_delivery: HTTPS segments/keys/maps direct; HTTP resources use existing signed relay
+  browser_paths: native HLS and Hls.js both receive the same processed playlist
+filter:
+  upstream: LibreTV m3u8.ts ad-group functions
+  rules: marked URLs, short leading inserts, short interstitial groups between long movie groups
+  preserves: real discontinuity boundaries, keys, initialization and end-of-stream marker
+  bypass: live windows, byte ranges, implicit encryption IVs, non-AES-128 encryption
+  limitations: heuristic detection; cannot remove burned-in ads or guarantee zero false positives
+  live_channels: unchanged, no ad filtering
+```
+
+- 回归测试覆盖过滤开关的服务端行为、签名拒绝、相对地址、嵌套列表、加密与时间轴保护。
+- 本地真实影片验证：过滤前 2429 个分片、7590.987 秒；过滤后 2413 个分片、7520.719 秒。规则识别并剔除 16 个分片、约 70.268 秒；并非逐帧人工确认每个被移除片段。
+- 浏览器确认过滤后的 1920 像素宽视频解码与播放时间推进；关闭过滤后原始时长恢复，刷新后开关状态保留。此记录不等同于真机 iPhone/iPad 验收。
+- 同时修正聚合搜索携带 `itemsKey` 进入播放页时，被错误判定为缺少参数的问题。

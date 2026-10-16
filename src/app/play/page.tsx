@@ -56,14 +56,19 @@ function PlayPageClient() {
   const [favorited, setFavorited] = useState(false);
 
   // 去广告开关（从 localStorage 继承，默认 true）
-  const [blockAdEnabled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const v = localStorage.getItem('enable_blockad');
-      if (v !== null) return v === 'true';
+  const [blockAdEnabled, setBlockAdEnabled] = useState(true);
+  const [adSettingReady, setAdSettingReady] = useState(false);
+  const [playbackError, setPlaybackError] = useState(false);
+  const [playbackAttempt, setPlaybackAttempt] = useState(0);
+  const continuePlayingRef = useRef(false);
+  useEffect(() => {
+    try {
+      setBlockAdEnabled(localStorage.getItem('enable_blockad') !== 'false');
+    } catch {
+      // Private browsing can deny storage; the switch still works in memory.
     }
-    return true;
-  });
-  const blockAdEnabledRef = useRef(blockAdEnabled);
+    setAdSettingReady(true);
+  }, []);
 
   // 视频基本信息
   const [videoTitle, setVideoTitle] = useState(
@@ -122,6 +127,14 @@ function PlayPageClient() {
 
   // 视频播放地址
   const [videoUrl, setVideoUrl] = useState('');
+  const playbackUrl = /\.m3u8(?:[?#]|$)/i.test(videoUrl)
+    ? `/api/play/manifest?${new URLSearchParams({
+        source: currentSource,
+        id: currentId,
+        episode: String(currentEpisodeIndex),
+        filter: blockAdEnabled ? '1' : '0',
+      })}`
+    : videoUrl;
 
   // 总集数
   const totalEpisodes = detail?.episodes?.length || 0;
@@ -307,56 +320,6 @@ function PlayPageClient() {
     }
   };
 
-  // 去广告相关函数
-  function filterAdsFromM3U8(m3u8Content: string): string {
-    if (!m3u8Content) return '';
-
-    // 按行分割M3U8内容
-    const lines = m3u8Content.split('\n');
-    const filteredLines = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-
-      // 只过滤#EXT-X-DISCONTINUITY标识
-      if (!line.includes('#EXT-X-DISCONTINUITY')) {
-        filteredLines.push(line);
-      }
-    }
-
-    return filteredLines.join('\n');
-  }
-
-  class CustomHlsJsLoader extends Hls.DefaultConfig.loader {
-    constructor(config: any) {
-      super(config);
-      const load = this.load.bind(this);
-      this.load = function (context: any, config: any, callbacks: any) {
-        // 拦截manifest和level请求
-        if (
-          (context as any).type === 'manifest' ||
-          (context as any).type === 'level'
-        ) {
-          const onSuccess = callbacks.onSuccess;
-          callbacks.onSuccess = function (
-            response: any,
-            stats: any,
-            context: any
-          ) {
-            // 如果是m3u8文件，处理内容以移除广告分段
-            if (response.data && typeof response.data === 'string') {
-              // 过滤掉广告段 - 实现更精确的广告过滤逻辑
-              response.data = filterAdsFromM3U8(response.data);
-            }
-            return onSuccess(response, stats, context, null);
-          };
-        }
-        // 执行原始load方法
-        load(context, config, callbacks);
-      };
-    }
-  }
-
   // 当集数索引变化时自动更新视频地址
   useEffect(() => {
     updateVideoUrl(detail, currentEpisodeIndex);
@@ -494,7 +457,8 @@ function PlayPageClient() {
         !currentId &&
         !videoTitle &&
         !searchTitle &&
-        !searchQueryParam
+        !searchQueryParam &&
+        !preloadedItems?.length
       ) {
         setError('缺少必要参数');
         setLoading(false);
@@ -1014,8 +978,27 @@ function PlayPageClient() {
     }
   };
 
+  const restartPlayback = () => {
+    const video = videoRef.current;
+    if (video && video.currentTime > 0)
+      resumeTimeRef.current = video.currentTime;
+    continuePlayingRef.current = Boolean(video && !video.paused);
+    setPlaybackAttempt((attempt) => attempt + 1);
+  };
+
+  const toggleAdFilter = () => {
+    restartPlayback();
+    const next = !blockAdEnabled;
+    setBlockAdEnabled(next);
+    try {
+      localStorage.setItem('enable_blockad', String(next));
+    } catch {
+      // Keep the current session usable when persistent storage is unavailable.
+    }
+  };
+
   useEffect(() => {
-    if (!videoUrl || loading) return;
+    if (!playbackUrl || loading || !adSettingReady) return;
 
     // 确保选集索引有效
     if (
@@ -1030,6 +1013,10 @@ function PlayPageClient() {
 
     const video = videoRef.current;
     if (!video) return;
+    setPlaybackError(false);
+    setIsVideoLoading(true);
+    let cancelled = false;
+    let recoveries = 0;
 
     // 清理旧 HLS
     if (hlsRef.current) {
@@ -1068,6 +1055,11 @@ function PlayPageClient() {
       }
       resumeTimeRef.current = null;
       setIsVideoLoading(false);
+      setPlaybackError(false);
+      if (continuePlayingRef.current) {
+        continuePlayingRef.current = false;
+        void video.play().catch(() => undefined);
+      }
     };
     const onVolume = () => {
       lastVolumeRef.current = video.volume;
@@ -1092,17 +1084,23 @@ function PlayPageClient() {
     const onPause = () => {
       saveCurrentPlayProgress();
     };
+    const onPlaybackError = () => {
+      if (cancelled) return;
+      setIsVideoLoading(false);
+      setPlaybackError(true);
+    };
 
     video.addEventListener('canplay', onCanPlay);
     video.addEventListener('volumechange', onVolume);
     video.addEventListener('timeupdate', onTimeUpdate);
     video.addEventListener('ended', onEnded);
     video.addEventListener('pause', onPause);
+    video.addEventListener('error', onPlaybackError);
 
     // 加载源
     if (canNativeHls || !Hls.isSupported()) {
-      ensureVideoSource(video, videoUrl);
-      video.src = videoUrl;
+      ensureVideoSource(video, playbackUrl);
+      video.src = playbackUrl;
       video.load();
     } else {
       const hls = new Hls({
@@ -1112,17 +1110,22 @@ function PlayPageClient() {
         maxBufferLength: 30,
         backBufferLength: 30,
         maxBufferSize: 60 * 1000 * 1000,
-        loader: blockAdEnabledRef.current
-          ? CustomHlsJsLoader
-          : Hls.DefaultConfig.loader,
       });
       hlsRef.current = hls;
       hls.attachMedia(video);
       hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-        hls.loadSource(videoUrl);
+        hls.loadSource(playbackUrl);
       });
       hls.on(Hls.Events.ERROR, function (_event: any, data: any) {
         if (data.fatal) {
+          if (
+            ++recoveries > 2 ||
+            data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR
+          ) {
+            hls.destroy();
+            onPlaybackError();
+            return;
+          }
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               hls.startLoad();
@@ -1136,6 +1139,7 @@ function PlayPageClient() {
               } catch (_) {
                 /* ignore */
               }
+              onPlaybackError();
               break;
           }
         }
@@ -1143,11 +1147,13 @@ function PlayPageClient() {
     }
 
     return () => {
+      cancelled = true;
       video.removeEventListener('canplay', onCanPlay);
       video.removeEventListener('volumechange', onVolume);
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('ended', onEnded);
       video.removeEventListener('pause', onPause);
+      video.removeEventListener('error', onPlaybackError);
       if (hlsRef.current) {
         try {
           hlsRef.current.destroy();
@@ -1156,8 +1162,12 @@ function PlayPageClient() {
         }
         hlsRef.current = null;
       }
+      video.pause();
+      video.removeAttribute('src');
+      video.querySelectorAll('source').forEach((source) => source.remove());
+      video.load();
     };
-  }, [videoUrl, loading, blockAdEnabled]);
+  }, [playbackUrl, videoUrl, loading, adSettingReady, playbackAttempt]);
 
   // 当组件卸载时清理定时器
   useEffect(() => {
@@ -1264,7 +1274,34 @@ function PlayPageClient() {
               x-webkit-airplay='allow'
               preload='metadata'
             />
-            {isVideoLoading && (
+            {playbackError && (
+              <div
+                role='alert'
+                className='absolute inset-0 z-[500] flex flex-col items-center justify-center gap-4 bg-black/85 px-5 text-center text-white'
+              >
+                <p className='text-sm'>视频加载失败</p>
+                <div className='flex flex-wrap justify-center gap-3'>
+                  <button
+                    type='button'
+                    onClick={restartPlayback}
+                    className='inline-flex min-h-11 items-center gap-2 rounded-lg bg-white/15 px-4 text-sm'
+                  >
+                    <RotateCcw className='h-4 w-4' aria-hidden='true' />
+                    重试
+                  </button>
+                  {blockAdEnabled && (
+                    <button
+                      type='button'
+                      onClick={toggleAdFilter}
+                      className='min-h-11 rounded-lg bg-white/15 px-4 text-sm'
+                    >
+                      关闭广告过滤
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {isVideoLoading && !playbackError && (
               <div className='absolute inset-0 z-[500] flex items-center justify-center rounded-xl bg-black/85 px-5 text-white'>
                 <div
                   role='status'
@@ -1285,6 +1322,23 @@ function PlayPageClient() {
         </div>
 
         <div className='tv-play-controls tv-episode-panel min-w-0'>
+          <div className='flex justify-end px-4 py-2'>
+            <label className='inline-flex min-h-11 cursor-pointer items-center gap-3 text-sm font-medium'>
+              过滤广告
+              <input
+                type='checkbox'
+                role='switch'
+                checked={blockAdEnabled}
+                disabled={!adSettingReady}
+                onChange={toggleAdFilter}
+                className='peer sr-only'
+              />
+              <span
+                aria-hidden='true'
+                className='relative h-6 w-10 shrink-0 rounded-full bg-gray-400 transition-colors after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:bg-emerald-600 peer-checked:after:translate-x-4 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-500 peer-focus-visible:ring-offset-2'
+              />
+            </label>
+          </div>
           <EpisodeSelector
             totalEpisodes={totalEpisodes}
             value={currentEpisodeIndex + 1}
