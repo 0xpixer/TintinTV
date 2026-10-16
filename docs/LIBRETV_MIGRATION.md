@@ -149,6 +149,8 @@ pipeline:
   detail_cache_seconds: 60
   media_delivery: HTTPS segments/keys/maps direct; HTTP resources use existing signed relay
   browser_paths: native HLS and Hls.js both receive the same processed playlist
+  server_failure: direct fallback once; Hls.js filters locally, native HLS displays 此片源当前未过滤
+  request_headers: LibreTV browser-compatible User-Agent and Accept */*
 filter:
   upstream: LibreTV m3u8.ts ad-group functions
   rules: marked URLs, short leading inserts, short interstitial groups between long movie groups

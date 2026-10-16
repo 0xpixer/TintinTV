@@ -13,6 +13,7 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
+import { AdFilterLoader } from '@/lib/ad-filter-loader';
 import { resolveContentKind } from '@/lib/content-kind';
 import {
   deleteFavorite,
@@ -59,6 +60,7 @@ function PlayPageClient() {
   const [blockAdEnabled, setBlockAdEnabled] = useState(true);
   const [adSettingReady, setAdSettingReady] = useState(false);
   const [playbackError, setPlaybackError] = useState(false);
+  const [adFilterUnavailable, setAdFilterUnavailable] = useState(false);
   const [playbackAttempt, setPlaybackAttempt] = useState(0);
   const continuePlayingRef = useRef(false);
   useEffect(() => {
@@ -1014,9 +1016,11 @@ function PlayPageClient() {
     const video = videoRef.current;
     if (!video) return;
     setPlaybackError(false);
+    setAdFilterUnavailable(false);
     setIsVideoLoading(true);
     let cancelled = false;
     let recoveries = 0;
+    let usingDirect = false;
 
     // 清理旧 HLS
     if (hlsRef.current) {
@@ -1086,6 +1090,16 @@ function PlayPageClient() {
     };
     const onPlaybackError = () => {
       if (cancelled) return;
+      if (!usingDirect && playbackUrl !== videoUrl) {
+        usingDirect = true;
+        recoveries = 0;
+        setIsVideoLoading(true);
+        setAdFilterUnavailable(
+          blockAdEnabled && (canNativeHls || !Hls.isSupported())
+        );
+        startPlayback(videoUrl, true);
+        return;
+      }
       setIsVideoLoading(false);
       setPlaybackError(true);
     };
@@ -1097,12 +1111,16 @@ function PlayPageClient() {
     video.addEventListener('pause', onPause);
     video.addEventListener('error', onPlaybackError);
 
-    // 加载源
-    if (canNativeHls || !Hls.isSupported()) {
-      ensureVideoSource(video, playbackUrl);
-      video.src = playbackUrl;
-      video.load();
-    } else {
+    function startPlayback(url: string, direct = false) {
+      if (!video || cancelled) return;
+      hlsRef.current?.destroy();
+      hlsRef.current = null;
+      if (canNativeHls || !Hls.isSupported()) {
+        ensureVideoSource(video, url);
+        video.src = url;
+        video.load();
+        return;
+      }
       const hls = new Hls({
         debug: false,
         enableWorker: true,
@@ -1110,11 +1128,13 @@ function PlayPageClient() {
         maxBufferLength: 30,
         backBufferLength: 30,
         maxBufferSize: 60 * 1000 * 1000,
+        loader:
+          direct && blockAdEnabled ? AdFilterLoader : Hls.DefaultConfig.loader,
       });
       hlsRef.current = hls;
       hls.attachMedia(video);
       hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-        hls.loadSource(playbackUrl);
+        hls.loadSource(url);
       });
       hls.on(Hls.Events.ERROR, function (_event: any, data: any) {
         if (data.fatal) {
@@ -1145,6 +1165,7 @@ function PlayPageClient() {
         }
       });
     }
+    startPlayback(playbackUrl);
 
     return () => {
       cancelled = true;
@@ -1167,7 +1188,14 @@ function PlayPageClient() {
       video.querySelectorAll('source').forEach((source) => source.remove());
       video.load();
     };
-  }, [playbackUrl, videoUrl, loading, adSettingReady, playbackAttempt]);
+  }, [
+    playbackUrl,
+    videoUrl,
+    loading,
+    adSettingReady,
+    playbackAttempt,
+    blockAdEnabled,
+  ]);
 
   // 当组件卸载时清理定时器
   useEffect(() => {
@@ -1322,7 +1350,15 @@ function PlayPageClient() {
         </div>
 
         <div className='tv-play-controls tv-episode-panel min-w-0'>
-          <div className='flex justify-end px-4 py-2'>
+          <div className='flex flex-wrap items-center justify-end gap-x-4 px-4 py-2'>
+            {adFilterUnavailable && blockAdEnabled && (
+              <span
+                role='status'
+                className='text-xs text-amber-700 dark:text-amber-300'
+              >
+                此片源当前未过滤
+              </span>
+            )}
             <label className='inline-flex min-h-11 cursor-pointer items-center gap-3 text-sm font-medium'>
               过滤广告
               <input

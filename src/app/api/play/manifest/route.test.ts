@@ -57,6 +57,15 @@ it('only resolves episodes from configured sources, then filters the returned pl
   expect(text).not.toContain('/ads/a.ts');
   expect(text).toContain('https://media.example/redirected/movie.ts');
   expect(response.headers.get('cache-control')).toBe('private, no-store');
+  expect(fetchUpstreamWithMeta).toHaveBeenCalledWith(
+    'https://media.example/movie.m3u8',
+    expect.objectContaining({
+      headers: expect.objectContaining({
+        Accept: '*/*',
+        'User-Agent': expect.stringContaining('Mozilla/'),
+      }),
+    })
+  );
 });
 
 it.each(['episode=-1', 'episode=0.5', 'episode=abc', 'episode='])(

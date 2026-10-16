@@ -1,5 +1,6 @@
 import { getAvailableApiSites } from '@/lib/config';
 import { getDetailFromApi } from '@/lib/downstream';
+import { cmsRequestHeaders } from '@/lib/libretv/cms-parser';
 import {
   fetchUpstreamWithMeta,
   getCache,
@@ -47,6 +48,7 @@ export async function GET(request: Request) {
       expires = Math.floor(Date.now() / 1000) + 6 * 60 * 60;
     }
     const { res, finalUrl } = await fetchUpstreamWithMeta(url, {
+      headers: { ...cmsRequestHeaders(), Accept: '*/*' },
       timeoutMs: 12000,
       signal: request.signal,
     });
