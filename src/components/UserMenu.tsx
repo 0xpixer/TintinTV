@@ -2,7 +2,15 @@
 
 'use client';
 
-import { KeyRound, LogOut, Settings, Shield, User, X } from 'lucide-react';
+import {
+  Code,
+  KeyRound,
+  LogOut,
+  Settings,
+  Shield,
+  User,
+  X,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -331,6 +339,15 @@ export const UserMenu: React.FC = () => {
 
         {/* 菜单项 */}
         <div className='py-1'>
+          <a
+            href='https://github.com/0xpixer/TintinTV'
+            target='_blank'
+            rel='noreferrer'
+            className='flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10'
+          >
+            <Code className='h-4 w-4 text-slate-500 dark:text-slate-400' />
+            <span className='font-medium'>源代码</span>
+          </a>
           {/* 设置按钮 */}
           <button
             onClick={handleSettings}

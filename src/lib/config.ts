@@ -3,6 +3,7 @@
 import { getStorage } from '@/lib/db';
 
 import { AdminConfig } from './admin.types';
+import { parseSourceDefaults } from './media-sources';
 import runtimeConfig from './runtime';
 
 export interface ApiSite {
@@ -380,10 +381,24 @@ export async function getCacheTime(): Promise<number> {
 
 export async function getAvailableApiSites(): Promise<ApiSite[]> {
   const config = await getConfig();
-  return config.SourceConfig.filter((s) => !s.disabled).map((s) => ({
+  const sources = config.SourceConfig.filter((s) => !s.disabled).map((s) => ({
     key: s.key,
     name: s.name,
     api: s.api,
     detail: s.detail,
   }));
+  const existing = new Set(
+    config.SourceConfig.map((source) => source.api.replace(/\/+$/, ''))
+  );
+  parseSourceDefaults(process.env.DEFAULT_SOURCES).forEach((source) => {
+    if (!existing.has(source.url.replace(/\/+$/, ''))) {
+      sources.push({
+        key: source.key,
+        name: source.name,
+        api: source.url,
+        detail: source.detail,
+      });
+    }
+  });
+  return sources.slice(0, 50);
 }

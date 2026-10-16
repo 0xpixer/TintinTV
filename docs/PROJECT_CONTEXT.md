@@ -20,6 +20,8 @@ canonical_for:
 
 # TintinTV 项目上下文
 
+> 2026-10-16 媒体核心更新：点播解析与安全请求接入 LibreTV，新增服务端预置源的 `/live` 页面与后台管理。账号、Upstash 和 UI 保留。当前变更以 [LIBRETV_MIGRATION.md](LIBRETV_MIGRATION.md) 为准；下面标注 2026-10-10 的生产部署 ID 和历史接口描述属于迁移前快照。
+
 > 本文使用稳定 ID、状态字段、表格和显式约束，供开发者与 AI 在后续任务中快速建立上下文。事实以 `2026-10-10` 的 `main@7ab05b3`、生产接口和 Vercel 配置为准。文档不包含密码、Token、Cookie、数据库内容或其他密钥值。
 
 ## 0. AI 使用规则

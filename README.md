@@ -1,5 +1,9 @@
 # TintinTV
 
+当前媒体核心集成自 [LibreTV](https://github.com/LibreSpark/LibreTV)，保留 TintinTV 的界面、账号与跨设备数据。默认点播源由服务端统一提供；“直播”包含精选频道及中国大陆、香港、台湾频道列表，管理员可在管理页统一添加或停用 M3U 源。
+
+迁移范围、配置与验证见 [LibreTV 迁移记录](docs/LIBRETV_MIGRATION.md)。完整架构见 [项目上下文](docs/PROJECT_CONTEXT.md)。
+
 <div align="center">
   <img src="public/logo.png" alt="TintinTV Logo" width="120">
 </div>
@@ -11,7 +15,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-14-000?logo=nextdotjs)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38bdf8?logo=tailwindcss)
 ![TypeScript](https://img.shields.io/badge/TypeScript-4.x-3178c6?logo=typescript)
-![License](https://img.shields.io/badge/License-MIT-green)
+![License](https://img.shields.io/badge/License-AGPL--3.0-green)
 ![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)
 ![Modern Design](https://img.shields.io/badge/Design-Glassmorphism-purple)
 
@@ -331,12 +335,12 @@ TintinTV 支持标准的苹果 CMS V10 API 格式。
 
 ## License
 
-[MIT](LICENSE) © 2025 TintinTV & Contributors
+[AGPL-3.0](LICENSE)。整合的 LibreTV 模块及来源见 [vendor/libretv](vendor/libretv/README.md)，原有 MIT 代码的版权与许可保留在 [LICENSE-MIT](LICENSE-MIT)。
 
 ## 致谢
 
 - [ts-nextjs-tailwind-starter](https://github.com/theodorusclarence/ts-nextjs-tailwind-starter) — 项目最初基于该脚手架。
-- [LibreTV](https://github.com/LibreSpark/LibreTV) — 由此启发，站在巨人的肩膀上。
+- [LibreTV](https://github.com/LibreSpark/LibreTV) — 点播解析、M3U 解析与安全请求核心。
 - [ArtPlayer](https://github.com/zhw2590582/ArtPlayer) — 提供强大的网页视频播放器。
 - [HLS.js](https://github.com/video-dev/hls.js) — 实现 HLS 流媒体在浏览器中的播放支持。
 - 感谢所有提供免费影视接口的站点。

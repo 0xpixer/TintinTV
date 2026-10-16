@@ -12,6 +12,8 @@ export function getCacheStrategyForRequest(
   if (url.pathname.startsWith('/api/')) {
     return 'network-only';
   }
+  if (/\.(m3u8?|ts|m4s|mp4|aac|flv|key)$/i.test(url.pathname))
+    return 'network-only';
 
   if (url.pathname.startsWith('/_next/') || !/\.[^/]+$/.test(url.pathname)) {
     return 'network-first';

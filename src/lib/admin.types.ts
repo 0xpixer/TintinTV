@@ -1,4 +1,7 @@
+import { ServerLiveSource } from './media-sources';
+
 export interface AdminConfig {
+  LiveSourceConfig?: ServerLiveSource[];
   SiteConfig: {
     SiteName: string;
     Announcement: string;

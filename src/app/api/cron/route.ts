@@ -5,9 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { prewarmDoubanCategories } from '@/lib/douban-prewarm';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
+import { prewarmLiveSources } from '@/lib/live-server';
 import { SearchResult } from '@/lib/types';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
@@ -22,7 +23,10 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Cron job triggered:', new Date().toISOString());
 
-    const douban = await prewarmDoubanCategories();
+    const [douban, live] = await Promise.all([
+      prewarmDoubanCategories(),
+      prewarmLiveSources(),
+    ]);
     void refreshRecordAndFavorites();
 
     if (douban.succeeded === 0) {
@@ -33,6 +37,7 @@ export async function GET(request: NextRequest) {
       success: true,
       message: 'Cron job executed successfully',
       douban,
+      live,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

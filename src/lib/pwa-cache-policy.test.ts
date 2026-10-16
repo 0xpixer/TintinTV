@@ -67,11 +67,31 @@ describe('PWA cache policy', () => {
       context
     ) as (request: { method: string }, url: URL) => string | null;
 
-    for (const path of ['/', '/douban?type=movie', '/favorites']) {
+    for (const path of [
+      '/',
+      '/douban?type=movie',
+      '/favorites',
+      '/live/channel.m3u8',
+      '/live/segment.ts',
+      '/video/part.m4s',
+    ]) {
       const url = new URL(path, 'https://example.com');
       expect(strategy({ method: 'GET' }, url)).toBe(
         getCacheStrategyForRequest('GET', url.toString())
       );
+    }
+  });
+
+  it('never freezes a live playlist or accumulates media segments offline', () => {
+    for (const path of [
+      '/live/index.m3u8',
+      '/live/1.ts',
+      '/live/2.m4s',
+      '/live/audio.aac',
+    ]) {
+      expect(
+        getCacheStrategyForRequest('GET', `https://cdn.example${path}`)
+      ).toBe('network-only');
     }
   });
 });

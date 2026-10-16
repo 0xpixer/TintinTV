@@ -30,6 +30,7 @@ import Swal from 'sweetalert2';
 import { AdminConfig, AdminConfigResult } from '@/lib/admin.types';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 
+import LiveSourceManager from '@/components/LiveSourceManager';
 import PageLayout from '@/components/PageLayout';
 
 // 统一弹窗方法（必须在首次使用前定义）
@@ -1429,6 +1430,7 @@ function AdminPageClient() {
             >
               <VideoSourceConfig config={config} refreshConfig={fetchConfig} />
             </CollapsibleTab>
+            <LiveSourceManager />
           </div>
         </div>
       </div>

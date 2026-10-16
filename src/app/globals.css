@@ -441,6 +441,234 @@ html.dark {
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
+.tv-live-page {
+  padding: 32px clamp(24px, 3.5vw, 64px);
+}
+.tv-live-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.tv-live-heading h1 {
+  margin-top: 6px;
+  font-size: 32px;
+  font-weight: 700;
+}
+.tv-live-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--tv-muted);
+}
+.tv-live-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+}
+.tv-live-player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: #08090b;
+  color: white;
+  border-radius: 16px;
+}
+.tv-live-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(8, 9, 11, 0.72);
+  text-align: center;
+}
+.tv-live-round-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  backdrop-filter: blur(16px);
+}
+.tv-live-round-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.tv-live-now {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.tv-live-now h2 {
+  font-size: 18px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.tv-live-now p {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--tv-muted);
+}
+.tv-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f04452;
+  flex: none;
+}
+.tv-live-guide {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: min(76vh, 850px);
+  border-left: 1px solid var(--tv-line);
+  padding-left: 20px;
+}
+.tv-live-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--tv-line);
+}
+.tv-live-filters label {
+  min-width: 0;
+  width: 100%;
+}
+.tv-live-filters select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--tv-line);
+  border-radius: 6px;
+  background-color: var(--tv-bg);
+  color: var(--tv-text);
+  font-size: 14px;
+}
+.tv-live-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--tv-line);
+  border-radius: 6px;
+  padding: 0 10px;
+}
+.tv-live-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  box-shadow: none;
+}
+.tv-live-channels {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: 6px;
+}
+.tv-live-channel {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--tv-line);
+}
+.tv-live-channel:hover,
+.tv-live-channel[aria-pressed='true'] {
+  background: var(--tv-surface);
+}
+.tv-live-channel[aria-pressed='true'] {
+  box-shadow: inset 3px 0 #f04452;
+}
+.tv-live-channel-logo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 56px;
+  height: 42px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--tv-surface);
+  color: var(--tv-muted);
+}
+.tv-live-channel-logo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--tv-surface);
+  padding: 4px;
+}
+.tv-live-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--tv-muted);
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  .tv-live-layout {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 16px;
+  }
+  .tv-live-guide {
+    padding-left: 12px;
+  }
+}
+@media (max-width: 767px) {
+  .tv-live-page {
+    padding: 24px 16px;
+  }
+  .tv-live-heading h1 {
+    font-size: 26px;
+  }
+  .tv-live-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .tv-live-layout > section {
+    width: 100%;
+  }
+  .tv-live-player {
+    width: calc(100% + 32px);
+    margin-left: -16px;
+    border-radius: 0;
+  }
+  .tv-live-guide {
+    max-height: none;
+    border-left: 0;
+    padding-left: 0;
+  }
+  .tv-live-channels {
+    max-height: 65vh;
+  }
+  .tv-live-filters label {
+    flex: 1 1 140px;
+  }
+}
+
 .tv-desktop-nav {
   position: sticky;
   top: 0;

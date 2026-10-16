@@ -5,6 +5,7 @@ import {
   Film,
   Heart,
   Home,
+  Radio,
   Search,
   Sparkles,
   Tv,
@@ -27,6 +28,7 @@ export const primaryItems = [
   { href: '/douban?type=tv', label: '剧集', icon: Tv },
   { href: '/animation', label: '动画', icon: Sparkles },
   { href: '/douban?type=show', label: '综艺', icon: Clapperboard },
+  { href: '/live', label: '直播', icon: Radio },
 ];
 export const quickItems = [
   { href: '/favorites', label: '收藏', icon: Heart },
