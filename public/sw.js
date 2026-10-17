@@ -1,6 +1,6 @@
 // Simple PWA Service Worker for TintinTV
-const STATIC_CACHE = 'tintintv-static-v2';
-const DYNAMIC_CACHE = 'tintintv-dynamic-v3';
+const STATIC_CACHE = 'tintintv-static-v3';
+const DYNAMIC_CACHE = 'tintintv-dynamic-v4';
 
 // Files to cache immediately
 const STATIC_FILES = [

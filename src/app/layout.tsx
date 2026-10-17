@@ -127,47 +127,7 @@ export default async function RootLayout({
 
         {/* iOS Specific */}
         <meta name='apple-touch-fullscreen' content='yes' />
-        {/* High resolution iOS icons - using standard iOS icon files */}
-        <link rel='apple-touch-icon' href='/apple-touch-icon.png' />
-        <link
-          rel='apple-touch-icon-precomposed'
-          href='/apple-touch-icon-precomposed.png'
-        />
-        <link
-          rel='apple-touch-icon'
-          sizes='152x152'
-          href='/icons/icon-152x152.png'
-        />
-        <link
-          rel='apple-touch-icon'
-          sizes='167x167'
-          href='/icons/icon-192x192.png'
-        />
-        <link
-          rel='apple-touch-icon'
-          sizes='180x180'
-          href='/icons/icon-192x192.png'
-        />
-        <link
-          rel='apple-touch-icon'
-          sizes='192x192'
-          href='/icons/icon-192x192.png'
-        />
-        <link
-          rel='apple-touch-icon'
-          sizes='256x256'
-          href='/icons/icon-256x256.png'
-        />
-        <link
-          rel='apple-touch-icon'
-          sizes='384x384'
-          href='/icons/icon-384x384.png'
-        />
-        <link
-          rel='apple-touch-icon'
-          sizes='512x512'
-          href='/icons/icon-512x512.png'
-        />
+        <link rel='apple-touch-icon' href='/apple-touch-icon.png?v=2' />
 
         {/* 将配置序列化后直接写入脚本，浏览器端可通过 window.RUNTIME_CONFIG 获取 */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
