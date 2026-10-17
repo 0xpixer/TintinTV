@@ -30,6 +30,15 @@ export async function generateMetadata(): Promise<Metadata> {
     title: siteName,
     description: 'Modern streaming platform for movies and TV shows',
     manifest: '/manifest.json',
+    icons: {
+      apple: [
+        {
+          url: '/apple-touch-icon-180x180.png',
+          sizes: '180x180',
+          type: 'image/png',
+        },
+      ],
+    },
     appleWebApp: {
       capable: true,
       statusBarStyle: 'black-translucent',
@@ -127,7 +136,6 @@ export default async function RootLayout({
 
         {/* iOS Specific */}
         <meta name='apple-touch-fullscreen' content='yes' />
-        <link rel='apple-touch-icon' href='/apple-touch-icon.png?v=2' />
 
         {/* 将配置序列化后直接写入脚本，浏览器端可通过 window.RUNTIME_CONFIG 获取 */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
