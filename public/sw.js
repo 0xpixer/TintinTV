@@ -1,6 +1,6 @@
 // Simple PWA Service Worker for TintinTV
-const STATIC_CACHE = 'tintintv-static-v4';
-const DYNAMIC_CACHE = 'tintintv-dynamic-v5';
+const STATIC_CACHE = 'tintintv-static-v5';
+const DYNAMIC_CACHE = 'tintintv-dynamic-v6';
 
 // Files to cache immediately
 const STATIC_FILES = [
@@ -11,6 +11,7 @@ const STATIC_FILES = [
   '/icons/icon-512x512.png',
   '/apple-touch-icon.png',
   '/apple-touch-icon-180x180.png',
+  '/apple-touch-icon-167x167.png',
   '/apple-touch-icon-precomposed.png',
 ];
 
