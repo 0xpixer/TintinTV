@@ -234,9 +234,16 @@
 /* Enhanced body background */
 html,
 body {
-  height: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   overscroll-behavior: none;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
 }
 
 body {
@@ -1379,7 +1386,7 @@ html:not(.dark) .tv-mobile-header-actions button:hover {
   .tv-play-details {
     display: grid;
     grid-template-columns: minmax(0, 1fr) clamp(240px, 25vw, 320px);
-    align-items: start;
+    align-items: stretch;
     gap: clamp(24px, 3vw, 48px);
     padding-top: 24px;
   }
@@ -1387,8 +1394,16 @@ html:not(.dark) .tv-mobile-header-actions button:hover {
     max-width: none;
     margin: 0;
   }
+  .tv-play-recommendations-slot {
+    position: relative;
+    min-height: 0;
+  }
   .tv-play-recommendations {
-    display: block;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
   }
   .tv-play-recommendations h2 {
     flex: none;
@@ -1398,7 +1413,20 @@ html:not(.dark) .tv-mobile-header-actions button:hover {
   }
   .tv-play-recommendations-list {
     display: grid;
+    min-height: 0;
+    flex: 1;
     gap: 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: var(--tv-line) transparent;
+    scrollbar-width: thin;
+  }
+  .tv-play-recommendations-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  .tv-play-recommendations-list::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    background: var(--tv-line);
   }
   .tv-play-recommendation {
     display: grid;

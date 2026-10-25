@@ -1410,10 +1410,12 @@ function PlayPageClient() {
               </div>
             </div>
           </div>
-          <PlayRecommendations
-            kind={recommendationKind}
-            currentTitle={videoTitle}
-          />
+          <div className='tv-play-recommendations-slot hidden md:block'>
+            <PlayRecommendations
+              kind={recommendationKind}
+              currentTitle={videoTitle}
+            />
+          </div>
         </div>
       </div>
     </PageLayout>
