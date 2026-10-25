@@ -26,7 +26,10 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { readPlayItemsFromSearchParams } from '@/lib/play-handoff';
-import { matchingPlaybackSources } from '@/lib/playback-source-match';
+import {
+  matchingPlaybackSources,
+  nextUntriedPlaybackSource,
+} from '@/lib/playback-source-match';
 import { rankSourceTestResults } from '@/lib/source-ranking';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
@@ -149,6 +152,11 @@ function PlayPageClient() {
 
   // 换源相关状态
   const [availableSources, setAvailableSources] = useState<SearchResult[]>([]);
+  const availableSourcesRef = useRef<SearchResult[]>([]);
+  const failedSourcesRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    availableSourcesRef.current = availableSources;
+  }, [availableSources]);
   const [sourceSearchLoading, setSourceSearchLoading] = useState(false);
   const [sourceSearchError, setSourceSearchError] = useState<string | null>(
     null
@@ -950,6 +958,8 @@ function PlayPageClient() {
     let cancelled = false;
     let recoveries = 0;
     let usingDirect = false;
+    let reachedCanPlay = false;
+    let switchingSource = false;
 
     // 清理旧 HLS
     if (hlsRef.current) {
@@ -973,6 +983,7 @@ function PlayPageClient() {
 
     // 监听
     const onCanPlay = () => {
+      reachedCanPlay = true;
       if (resumeTimeRef.current && resumeTimeRef.current > 0) {
         try {
           const duration = video.duration || 0;
@@ -1018,7 +1029,7 @@ function PlayPageClient() {
       saveCurrentPlayProgress();
     };
     const onPlaybackError = () => {
-      if (cancelled) return;
+      if (cancelled || switchingSource) return;
       if (!usingDirect && playbackUrl !== videoUrl) {
         usingDirect = true;
         recoveries = 0;
@@ -1028,6 +1039,19 @@ function PlayPageClient() {
         );
         startPlayback(videoUrl, true);
         return;
+      }
+      if (!reachedCanPlay && detail) {
+        failedSourcesRef.current.add(`${detail.source}:${detail.id}`);
+        const next = nextUntriedPlaybackSource(
+          availableSourcesRef.current,
+          failedSourcesRef.current
+        );
+        if (next) {
+          switchingSource = true;
+          setVideoLoadingStage('sourceChanging');
+          void handleSourceChange(next.source, next.id, next.title);
+          return;
+        }
       }
       setIsVideoLoading(false);
       setPlaybackError(true);
@@ -1358,7 +1382,7 @@ function PlayPageClient() {
                 {/* 剧情简介 */}
                 {detail?.desc && (
                   <div
-                    className='mt-0 text-base leading-relaxed opacity-90 overflow-y-auto pr-2 flex-1 min-h-0 scrollbar-hide'
+                    className='mt-0 text-base leading-relaxed opacity-90'
                     style={{ whiteSpace: 'pre-line' }}
                   >
                     {detail.desc}

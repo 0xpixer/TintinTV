@@ -367,7 +367,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           </div>
 
           {/* 集数网格 */}
-          <div className='grid grid-cols-[repeat(auto-fill,minmax(40px,1fr))] auto-rows-[40px] gap-x-3 gap-y-3 overflow-y-auto h-full pb-4 md:hidden'>
+          <div className='grid grid-cols-[repeat(auto-fill,minmax(40px,1fr))] auto-rows-[40px] gap-x-3 gap-y-3 pb-4 md:hidden'>
             {(() => {
               const len = currentEnd - currentStart + 1;
               const episodes = Array.from({ length: len }, (_, i) =>
@@ -466,7 +466,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           {!sourceSearchLoading &&
             !sourceSearchError &&
             availableSources.length > 0 && (
-              <div className='flex-1 overflow-y-auto pb-4 md:flex md:gap-3 md:overflow-x-auto md:overflow-y-hidden'>
+              <div className='flex-1 pb-4 md:flex md:gap-3 md:overflow-x-auto'>
                 {[...availableSources]
                   .sort((a, b) => {
                     const aIsCurrent =

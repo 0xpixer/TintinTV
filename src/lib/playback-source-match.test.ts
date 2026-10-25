@@ -1,4 +1,7 @@
-import { matchingPlaybackSources } from './playback-source-match';
+import {
+  matchingPlaybackSources,
+  nextUntriedPlaybackSource,
+} from './playback-source-match';
 import { SearchResult } from './types';
 
 function result(
@@ -64,5 +67,41 @@ describe('automatic playback source matching', () => {
         'movie'
       )
     ).toEqual([]);
+  });
+
+  it('accepts an exact title followed by the requested release year', () => {
+    const correct = result('希望2026', 'unknown');
+    expect(
+      matchingPlaybackSources(
+        [result('天堂：希望2026', '2026'), correct],
+        '希望',
+        '2026',
+        'movie'
+      )
+    ).toEqual([correct]);
+    expect(matchingPlaybackSources([correct], '希望', '2025', 'movie')).toEqual(
+      []
+    );
+    expect(matchingPlaybackSources([correct], '希望', '', 'movie')).toEqual([]);
+  });
+
+  it('offers each trusted source once before giving up', () => {
+    const first = result('希望', '2026');
+    const second = { ...result('希望2026', 'unknown'), source: 'other' };
+    const sources = matchingPlaybackSources(
+      [first, second],
+      '希望',
+      '2026',
+      'movie'
+    );
+    expect(
+      nextUntriedPlaybackSource(sources, new Set(['demo:希望-2026']))
+    ).toBe(second);
+    expect(
+      nextUntriedPlaybackSource(
+        sources,
+        new Set(['demo:希望-2026', 'other:希望2026-unknown'])
+      )
+    ).toBeUndefined();
   });
 });

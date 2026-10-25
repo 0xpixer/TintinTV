@@ -16,12 +16,25 @@ export function matchingPlaybackSources(
 
   const targetYear = releaseYear(year);
   return results.filter((result) => {
-    if (normalizeTitle(result.title) !== normalizedTitle) return false;
-    if (targetYear && releaseYear(result.year) !== targetYear) return false;
+    const resultTitle = normalizeTitle(result.title);
+    const exactTitle = resultTitle === normalizedTitle;
+    const yearSuffix =
+      !!targetYear && resultTitle === `${normalizedTitle}${targetYear}`;
+    if (!exactTitle && !yearSuffix) return false;
+    const sourceYear = releaseYear(result.year);
+    if (targetYear && sourceYear !== targetYear && !(yearSuffix && !sourceYear))
+      return false;
     if (!Array.isArray(result.episodes) || result.episodes.length === 0)
       return false;
     if (type === 'movie' && result.episodes.length !== 1) return false;
     if (type === 'tv' && result.episodes.length <= 1) return false;
     return true;
   });
+}
+
+export function nextUntriedPlaybackSource(
+  sources: SearchResult[],
+  tried: ReadonlySet<string>
+): SearchResult | undefined {
+  return sources.find((source) => !tried.has(`${source.source}:${source.id}`));
 }
