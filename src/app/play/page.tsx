@@ -667,6 +667,14 @@ function PlayPageClient() {
   // ---------------------------------------------------------------------------
   // 处理全局快捷键
   const handleKeyboardShortcuts = (e: KeyboardEvent) => {
+    // On Android TV the D-pad must move focus between controls, not seek the video.
+    if (
+      navigator.userAgent.includes('TintinTVAndroidTV/') &&
+      e.target !== videoRef.current &&
+      ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)
+    ) {
+      return;
+    }
     // 忽略输入框中的按键事件
     if (
       (e.target as HTMLElement).tagName === 'INPUT' ||

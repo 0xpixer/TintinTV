@@ -14,6 +14,7 @@ import android.view.WindowInsetsController;
 import android.webkit.CookieManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceError;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -32,6 +33,10 @@ public class MainActivity extends Activity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private WebView webView;
     private TextView statusView;
+    private FrameLayout root;
+    private View fullscreenView;
+    private WebChromeClient.CustomViewCallback fullscreenCallback;
+    private boolean mainFrameLoadFailed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +58,7 @@ public class MainActivity extends Activity {
         settings.setUseWideViewPort(true);
         settings.setDatabaseEnabled(true);
         settings.setUserAgentString(
-                settings.getUserAgentString() + " TintinTVAndroidTV/1.0"
+                settings.getUserAgentString() + " TintinTVAndroidTV/1.1"
         );
 
         CookieManager.getInstance().setAcceptCookie(true);
@@ -62,8 +67,41 @@ public class MainActivity extends Activity {
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
         webView.requestFocus();
-        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onShowCustomView(View view, CustomViewCallback callback) {
+                if (fullscreenView != null) {
+                    callback.onCustomViewHidden();
+                    return;
+                }
+                fullscreenView = view;
+                fullscreenCallback = callback;
+                root.addView(view, new FrameLayout.LayoutParams(-1, -1));
+                webView.setVisibility(View.INVISIBLE);
+                view.requestFocus();
+                hideSystemUi();
+            }
+
+            @Override
+            public void onHideCustomView() {
+                if (fullscreenView == null) return;
+                root.removeView(fullscreenView);
+                fullscreenView = null;
+                webView.setVisibility(View.VISIBLE);
+                webView.requestFocus();
+                if (fullscreenCallback != null) {
+                    fullscreenCallback.onCustomViewHidden();
+                    fullscreenCallback = null;
+                }
+                hideSystemUi();
+            }
+        });
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                mainFrameLoadFailed = false;
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
@@ -72,14 +110,28 @@ public class MainActivity extends Activity {
 
             @Override
             public void onPageFinished(WebView view, String url) {
+                if (mainFrameLoadFailed) return;
+                if (url != null && Uri.parse(url).getPath().equals("/login")) {
+                    showStatus("TV sign-in expired. Press OK to reconnect.");
+                    return;
+                }
                 statusView.setVisibility(View.GONE);
                 webView.setVisibility(View.VISIBLE);
+                webView.requestFocus();
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (request.isForMainFrame()) {
+                    mainFrameLoadFailed = true;
+                    showStatus("Unable to load TintinTV. Check the network and press OK to retry.");
+                }
             }
         });
     }
 
     private void setupViews() {
-        FrameLayout root = new FrameLayout(this);
+        root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(7, 10, 15));
 
         webView = new WebView(this);
@@ -95,6 +147,8 @@ public class MainActivity extends Activity {
         statusView.setTextSize(20);
         statusView.setGravity(Gravity.CENTER);
         statusView.setPadding(48, 48, 48, 48);
+        statusView.setFocusable(true);
+        statusView.setOnClickListener(view -> authenticateAndLoad());
         root.addView(statusView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
@@ -104,6 +158,9 @@ public class MainActivity extends Activity {
     }
 
     private void authenticateAndLoad() {
+        statusView.setText("Connecting to TintinTV...");
+        statusView.setVisibility(View.VISIBLE);
+        statusView.requestFocus();
         if (BuildConfig.TV_ACCESS_TOKEN.isEmpty()) {
             showStatus("TV token is missing. Rebuild the APK with tintintv.tvAccessToken in android-tv/local.properties.");
             return;
@@ -136,7 +193,13 @@ public class MainActivity extends Activity {
         }
 
         Map<String, List<String>> headers = connection.getHeaderFields();
-        List<String> cookies = headers.get("Set-Cookie");
+        List<String> cookies = null;
+        for (Map.Entry<String, List<String>> header : headers.entrySet()) {
+            if (header.getKey() != null && header.getKey().equalsIgnoreCase("Set-Cookie")) {
+                cookies = header.getValue();
+                break;
+            }
+        }
         if (cookies != null) {
             CookieManager cookieManager = CookieManager.getInstance();
             for (String cookie : cookies) {
@@ -149,22 +212,38 @@ public class MainActivity extends Activity {
     }
 
     private boolean isTintinUrl(String url) {
-        return url != null && url.startsWith(BuildConfig.TINTINTV_URL);
+        if (url == null) return false;
+        Uri target = Uri.parse(url);
+        Uri allowed = Uri.parse(BuildConfig.TINTINTV_URL);
+        return "https".equals(target.getScheme())
+                && allowed.getHost().equalsIgnoreCase(target.getHost())
+                && target.getPort() == allowed.getPort();
     }
 
     private void showStatus(String message) {
         webView.setVisibility(View.INVISIBLE);
         statusView.setText(message);
         statusView.setVisibility(View.VISIBLE);
+        statusView.requestFocus();
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && fullscreenView != null) {
+            webView.getWebChromeClient().onHideCustomView();
+            return true;
+        }
         if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
             webView.goBack();
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) hideSystemUi();
     }
 
     @Override

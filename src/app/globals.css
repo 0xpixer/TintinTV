@@ -1625,3 +1625,50 @@ html:not(.dark) .tv-mobile-header-actions button:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Ten-foot controls are enabled only inside the Android TV APK. */
+.tv-device .tv-desktop-nav {
+  min-height: 88px;
+  padding-inline: 36px;
+}
+.tv-device .tv-nav-link {
+  min-height: 52px;
+  font-size: 17px;
+}
+.tv-device .tv-nav-quick-link,
+.tv-device .tv-nav-actions button {
+  min-width: 48px;
+  min-height: 48px;
+}
+.tv-device .tv-hero {
+  min-height: 84vh;
+}
+.tv-device .tv-hero-play {
+  width: 88px;
+  height: 88px;
+}
+.tv-device .tv-video-card h3 {
+  font-size: 17px;
+  line-height: 1.35;
+}
+.tv-device .tv-episode-panel button {
+  min-width: 54px;
+  min-height: 48px;
+}
+.tv-device :is(a, button, [role='link'], input, select, video):focus {
+  outline: 4px solid #fff;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 8px rgba(10, 10, 10, 0.72),
+    0 0 28px rgba(255, 255, 255, 0.4);
+  z-index: 5;
+}
+.tv-device .tv-video-card:focus {
+  transform: scale(1.035);
+  z-index: 10;
+}
+.tv-device .tv-video-card:focus .tv-video-poster {
+  box-shadow: 0 0 0 4px #fff;
+}
+.tv-device :is(a, button, [role='link'], input, select) {
+  scroll-margin: 110px 40px;
+}
