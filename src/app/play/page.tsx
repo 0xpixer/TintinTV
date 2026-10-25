@@ -26,6 +26,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { readPlayItemsFromSearchParams } from '@/lib/play-handoff';
+import { matchingPlaybackSources } from '@/lib/playback-source-match';
 import { rankSourceTestResults } from '@/lib/source-ranking';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
@@ -350,19 +351,6 @@ function PlayPageClient() {
         setSourceSearchLoading(false);
       }
     };
-    const normalizeTitle = (t: string) =>
-      (t || '')
-        .toLowerCase()
-        .replace(/\s+/g, '')
-        .replace(/[\p{P}\p{S}·・：:———_-]/gu, '');
-
-    const titlesLooselyMatch = (a: string, b: string) => {
-      const na = normalizeTitle(a);
-      const nb = normalizeTitle(b);
-      if (!na || !nb) return false;
-      return na === nb || na.includes(nb) || nb.includes(na);
-    };
-
     const fetchSourcesData = async (query: string): Promise<SearchResult[]> => {
       // 根据搜索词获取全部源信息
       try {
@@ -376,71 +364,12 @@ function PlayPageClient() {
 
         const all: SearchResult[] = data.results || [];
 
-        // 优先规则：
-        // 1) 标题宽松匹配且集数有效
-        // 2) 年份匹配优先，但不作为硬性条件
-        // 3) 若无匹配，退化为标题包含关系 + 集数有效
-        // 4) 若仍无，选择集数最多的若干项
-
-        const byLooseTitle = all.filter((r: SearchResult) =>
-          titlesLooselyMatch(r.title, videoTitleRef.current)
+        const results = matchingPlaybackSources(
+          all,
+          videoTitleRef.current || query,
+          videoYearRef.current,
+          searchType
         );
-        const withEpisodes = byLooseTitle.filter(
-          (r: SearchResult) =>
-            Array.isArray(r.episodes) && r.episodes.length > 0
-        );
-
-        // 应用类型约束（tv/movie）
-        const applyTypeConstraint = (list: SearchResult[]) =>
-          list.filter((r) =>
-            searchType
-              ? (searchType === 'tv' && r.episodes.length > 1) ||
-                (searchType === 'movie' && r.episodes.length === 1)
-              : true
-          );
-
-        // 年份加权排序：匹配给定年份的排前面
-        const sortByYearPreference = (list: SearchResult[]) => {
-          const targetYear = (videoYearRef.current || '').toLowerCase();
-          return [...list].sort((a, b) => {
-            const ay = (a.year || '').toLowerCase();
-            const by = (b.year || '').toLowerCase();
-            const aMatch = targetYear && ay === targetYear ? 1 : 0;
-            const bMatch = targetYear && by === targetYear ? 1 : 0;
-            if (aMatch !== bMatch) return bMatch - aMatch;
-            // 次级依据：集数多的优先
-            return (b.episodes?.length || 0) - (a.episodes?.length || 0);
-          });
-        };
-
-        let results: SearchResult[] = applyTypeConstraint(
-          sortByYearPreference(withEpisodes)
-        );
-
-        if (results.length === 0) {
-          const fallbackLoose = all.filter(
-            (r: SearchResult) =>
-              titlesLooselyMatch(r.title, videoTitleRef.current) ||
-              titlesLooselyMatch(r.title, query)
-          );
-          const fallbackWithEpisodes = fallbackLoose.filter(
-            (r: SearchResult) =>
-              Array.isArray(r.episodes) && r.episodes.length > 0
-          );
-          results = applyTypeConstraint(
-            sortByYearPreference(fallbackWithEpisodes)
-          );
-        }
-
-        if (results.length === 0) {
-          // 最终兜底：按集数多少排序选前若干个
-          results = [...all]
-            .filter((r) => Array.isArray(r.episodes))
-            .sort(
-              (a, b) => (b.episodes?.length || 0) - (a.episodes?.length || 0)
-            )
-            .slice(0, 8);
-        }
 
         setAvailableSources(results);
         return results;
@@ -506,7 +435,7 @@ function PlayPageClient() {
         sourcesInfo = await fetchSourceDetail(currentSource, currentId);
       }
       if (sourcesInfo.length === 0) {
-        setError('未找到匹配结果');
+        setError('未找到片名和年份一致的可播放资源');
         setLoading(false);
         return;
       }
