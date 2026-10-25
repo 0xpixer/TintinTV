@@ -27,8 +27,8 @@ android {
         applicationId "club.tintintv.tv"
         minSdk 23
         targetSdk 35
-        versionCode 3
-        versionName "1.1.1"
+        versionCode 4
+        versionName "1.1.2"
 
         buildConfigField "String", "TINTINTV_URL", "\"${tvUrl}\""
         buildConfigField "String", "TV_ACCESS_TOKEN", "\"${tvToken}\""

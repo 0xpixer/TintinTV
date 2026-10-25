@@ -12,6 +12,7 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.webkit.CookieManager;
+import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceError;
@@ -38,6 +39,7 @@ public class MainActivity extends Activity {
     private WebChromeClient.CustomViewCallback fullscreenCallback;
     private boolean mainFrameLoadFailed;
     private int authRecoveryAttempts;
+    private String lastWebError = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +72,15 @@ public class MainActivity extends Activity {
         webView.requestFocus();
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
+            public boolean onConsoleMessage(ConsoleMessage message) {
+                if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR
+                        && lastWebError.isEmpty()) {
+                    lastWebError = message.message();
+                }
+                return super.onConsoleMessage(message);
+            }
+
+            @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
                 if (fullscreenView != null) {
                     callback.onCustomViewHidden();
@@ -101,6 +112,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                 mainFrameLoadFailed = false;
+                lastWebError = "";
                 if (isLoginUrl(url)) {
                     showStatus("Reconnecting to TintinTV...");
                 }
@@ -128,16 +140,51 @@ public class MainActivity extends Activity {
                 statusView.setVisibility(View.GONE);
                 webView.setVisibility(View.VISIBLE);
                 webView.requestFocus();
+                view.postDelayed(() -> checkPageRendered(url), 12000);
             }
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) {
                     mainFrameLoadFailed = true;
-                    showStatus("Unable to load TintinTV. Check the network and press OK to retry.");
+                    showStatus("Unable to load TintinTV (" + error.getErrorCode()
+                            + "). Check the network and press OK to retry.");
+                }
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request,
+                                            android.webkit.WebResourceResponse response) {
+                if (request.isForMainFrame()) {
+                    mainFrameLoadFailed = true;
+                    showStatus("TintinTV returned HTTP " + response.getStatusCode()
+                            + ". Press OK to retry.");
                 }
             }
         });
+    }
+
+    private void checkPageRendered(String expectedUrl) {
+        if (mainFrameLoadFailed || !expectedUrl.equals(webView.getUrl())
+                || statusView.getVisibility() == View.VISIBLE) return;
+
+        webView.evaluateJavascript(
+                "!!(document.querySelector('.tv-app') && document.body && document.body.innerText.trim().length > 12)",
+                result -> {
+                    if (!"false".equals(result) || !expectedUrl.equals(webView.getUrl())) return;
+                    String userAgent = webView.getSettings().getUserAgentString();
+                    java.util.regex.Matcher chromeVersion = java.util.regex.Pattern
+                            .compile("Chrome/[0-9.]+")
+                            .matcher(userAgent);
+                    String chromium = chromeVersion.find()
+                            ? chromeVersion.group() : "WebView version unknown";
+                    String detail = lastWebError.isEmpty() ? "No JavaScript error reported"
+                            : lastWebError.substring(0, Math.min(180, lastWebError.length()));
+                    showStatus("TintinTV page did not render. Android "
+                            + android.os.Build.VERSION.RELEASE + " / " + chromium
+                            + "\n" + detail + "\nPress OK to retry.");
+                }
+        );
     }
 
     private void setupViews() {
