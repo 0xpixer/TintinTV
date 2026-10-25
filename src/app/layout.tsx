@@ -184,11 +184,20 @@ export default async function RootLayout({
               
               // Add error handling for unhandled errors
               window.addEventListener('error', function(event) {
-                console.error('PWA: Unhandled error:', event.error);
+                var location = event.filename
+                  ? event.filename.split('/').pop() + ':' + event.lineno + ':' + event.colno
+                  : 'unknown script';
+                var detail = event.error && event.error.message
+                  ? event.error.message
+                  : event.message || 'Unknown error';
+                console.error('PWA: Unhandled error: ' + detail + ' @ ' + location);
               });
               
               window.addEventListener('unhandledrejection', function(event) {
-                console.error('PWA: Unhandled promise rejection:', event.reason);
+                var detail = event.reason && event.reason.message
+                  ? event.reason.message
+                  : String(event.reason);
+                console.error('PWA: Unhandled promise rejection: ' + detail);
               });
               
               // Check if running in PWA mode
