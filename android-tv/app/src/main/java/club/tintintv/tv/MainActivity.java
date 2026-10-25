@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
     private View fullscreenView;
     private WebChromeClient.CustomViewCallback fullscreenCallback;
     private boolean mainFrameLoadFailed;
+    private int authRecoveryAttempts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +101,9 @@ public class MainActivity extends Activity {
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                 mainFrameLoadFailed = false;
+                if (isLoginUrl(url)) {
+                    showStatus("Reconnecting to TintinTV...");
+                }
             }
 
             @Override
@@ -111,10 +115,16 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 if (mainFrameLoadFailed) return;
-                if (url != null && Uri.parse(url).getPath().equals("/login")) {
-                    showStatus("TV sign-in expired. Press OK to reconnect.");
+                if (isLoginUrl(url)) {
+                    if (authRecoveryAttempts < 2) {
+                        authRecoveryAttempts++;
+                        authenticateAndLoad();
+                    } else {
+                        showStatus("Unable to reconnect. Check the network and press OK to retry.");
+                    }
                     return;
                 }
+                authRecoveryAttempts = 0;
                 statusView.setVisibility(View.GONE);
                 webView.setVisibility(View.VISIBLE);
                 webView.requestFocus();
@@ -148,7 +158,10 @@ public class MainActivity extends Activity {
         statusView.setGravity(Gravity.CENTER);
         statusView.setPadding(48, 48, 48, 48);
         statusView.setFocusable(true);
-        statusView.setOnClickListener(view -> authenticateAndLoad());
+        statusView.setOnClickListener(view -> {
+            authRecoveryAttempts = 0;
+            authenticateAndLoad();
+        });
         root.addView(statusView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
@@ -218,6 +231,10 @@ public class MainActivity extends Activity {
         return "https".equals(target.getScheme())
                 && allowed.getHost().equalsIgnoreCase(target.getHost())
                 && target.getPort() == allowed.getPort();
+    }
+
+    private boolean isLoginUrl(String url) {
+        return url != null && "/login".equals(Uri.parse(url).getPath());
     }
 
     private void showStatus(String message) {

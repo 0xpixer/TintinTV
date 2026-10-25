@@ -10,7 +10,9 @@ unchanged. The APK opens `https://www.tintintv.app` by default.
 
 The APK does not store your TintinTV username or password. Instead, it calls
 `POST /api/tv-auth` with a private TV token and receives the normal `auth`
-cookie used by the web app.
+cookie used by the web app. It does this automatically on every launch, and
+reconnects automatically if the website sends it to the login page. You never
+need to enter an account name or password on the projector.
 
 Set the same token in both places:
 
