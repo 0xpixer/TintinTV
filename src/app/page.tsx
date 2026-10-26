@@ -160,7 +160,7 @@ function HomeClient() {
       type: hotMovies[0] ? 'movie' : 'tv',
     });
 
-    fetch(`/api/tmdb/backdrop?${params}`)
+    fetch(`/api/tmdb/backdrop?${params}`, { credentials: 'same-origin' })
       .then((response) => (response.ok ? response.json() : null))
       .then(
         (
@@ -270,9 +270,14 @@ function HomeClient() {
       } catch (error) {
         console.error(`获取${label}失败:`, error);
         if (active) {
+          const detail = error instanceof Error ? error.message : String(error);
+          const isAndroidTv =
+            navigator.userAgent.includes('TintinTVAndroidTV/');
           setCategoryErrors((previous) => ({
             ...previous,
-            [key]: '暂时无法加载，请重试。',
+            [key]: isAndroidTv
+              ? `暂时无法加载：${detail}`
+              : '暂时无法加载，请重试。',
           }));
         }
       } finally {
@@ -342,9 +347,13 @@ function HomeClient() {
         });
       } catch (error) {
         console.error(`获取${label}失败:`, error);
+        const detail = error instanceof Error ? error.message : String(error);
+        const isAndroidTv = navigator.userAgent.includes('TintinTVAndroidTV/');
         setCategoryErrors((previous) => ({
           ...previous,
-          [key]: '暂时无法加载，请重试。',
+          [key]: isAndroidTv
+            ? `暂时无法加载：${detail}`
+            : '暂时无法加载，请重试。',
         }));
       } finally {
         setLoading(false);

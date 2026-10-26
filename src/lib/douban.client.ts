@@ -49,8 +49,11 @@ async function fetchWithTimeout(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+  const controller =
+    typeof AbortController === 'undefined' ? null : new AbortController();
+  const timeoutId = controller
+    ? setTimeout(() => controller.abort(), 10000)
+    : null;
 
   // 检查是否使用代理
   const proxyUrl = getDoubanProxyUrl();
@@ -58,7 +61,8 @@ async function fetchWithTimeout(
 
   const fetchOptions: RequestInit = {
     ...options,
-    signal: controller.signal,
+    credentials: 'same-origin',
+    ...(controller ? { signal: controller.signal } : {}),
     headers: {
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
@@ -70,10 +74,10 @@ async function fetchWithTimeout(
 
   try {
     const response = await fetch(finalUrl, fetchOptions);
-    clearTimeout(timeoutId);
+    if (timeoutId !== null) clearTimeout(timeoutId);
     return response;
   } catch (error) {
-    clearTimeout(timeoutId);
+    if (timeoutId !== null) clearTimeout(timeoutId);
     throw error;
   }
 }
@@ -179,11 +183,12 @@ export async function getDoubanCategories(
     // 使用服务端 API（当没有设置代理 URL 时）
     const { kind, category, type, pageLimit = 20, pageStart = 0 } = params;
     const response = await fetch(
-      `/api/douban/categories?kind=${kind}&category=${category}&type=${type}&limit=${pageLimit}&start=${pageStart}`
+      `/api/douban/categories?kind=${kind}&category=${category}&type=${type}&limit=${pageLimit}&start=${pageStart}`,
+      { credentials: 'same-origin' }
     );
 
     if (!response.ok) {
-      throw new Error('获取豆瓣分类数据失败');
+      throw new Error(`获取豆瓣分类数据失败 (${response.status})`);
     }
 
     return response.json();
