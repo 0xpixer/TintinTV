@@ -84,6 +84,13 @@ class ErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
+      const isAndroidTv =
+        typeof navigator !== 'undefined' &&
+        navigator.userAgent.includes('TintinTVAndroidTV/');
+      const errorDetail = this.state.error
+        ? this.state.error.message || String(this.state.error)
+        : 'Unknown rendering error';
+
       return (
         <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900'>
           <div className='text-center'>
@@ -93,6 +100,11 @@ class ErrorBoundary extends React.Component<
             <p className='text-gray-600 dark:text-gray-400 mb-4'>
               请刷新页面重试
             </p>
+            {isAndroidTv && (
+              <p className='mx-auto mb-4 max-w-3xl px-8 text-sm text-red-300'>
+                {errorDetail}
+              </p>
+            )}
             <button
               onClick={() => window.location.reload()}
               className='bg-brand-500 text-white px-4 py-2 rounded-lg hover:bg-brand-600 transition-colors'

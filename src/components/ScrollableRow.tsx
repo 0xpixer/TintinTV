@@ -39,19 +39,20 @@ export default function ScrollableRow({
     // 监听窗口大小变化
     window.addEventListener('resize', checkScroll);
 
-    // 创建一个 ResizeObserver 来监听容器大小变化
-    const resizeObserver = new ResizeObserver(() => {
-      // 延迟执行检查
-      checkScroll();
-    });
+    // Chromium 62 on the XGIMI projector predates ResizeObserver. The window
+    // resize listener above is sufficient as a fallback on that device.
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(checkScroll);
 
-    if (containerRef.current) {
+    if (resizeObserver && containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
 
     return () => {
       window.removeEventListener('resize', checkScroll);
-      resizeObserver.disconnect();
+      if (resizeObserver) resizeObserver.disconnect();
     };
   }, [children]); // 依赖 children，当子组件变化时重新检查
 

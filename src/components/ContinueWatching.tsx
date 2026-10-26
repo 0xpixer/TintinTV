@@ -146,11 +146,14 @@ export default function ContinueWatching({
     if (!track) return;
     updateResumeScroll();
     track.addEventListener('scroll', updateResumeScroll, { passive: true });
-    const observer = new ResizeObserver(updateResumeScroll);
-    observer.observe(track);
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(updateResumeScroll);
+    if (observer) observer.observe(track);
     return () => {
       track.removeEventListener('scroll', updateResumeScroll);
-      observer.disconnect();
+      if (observer) observer.disconnect();
     };
   }, [loading, playRecords.length, updateResumeScroll]);
 
