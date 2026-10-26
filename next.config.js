@@ -54,7 +54,7 @@ const nextConfig = {
 
     if (!isServer) {
       config.module.rules.push({
-        test: /next[\\/]dist[\\/](?:esm[\\/])?lib[\\/]url\.js$/,
+        test: /next[\\/]dist[\\/](?:(?:esm[\\/])?lib[\\/]url|(?:esm[\\/])?client[\\/]components[\\/]async-local-storage)\.js$/,
         enforce: 'pre',
         use: path.resolve(__dirname, 'scripts/legacy-webview-loader.js'),
       });

@@ -19,9 +19,11 @@ function checkDirectory(directory) {
 
     checkedChunks += 1;
     const source = fs.readFileSync(absolutePath, 'utf8');
-    if (/\bcatch\s*\{/.test(source)) {
-      incompatibleChunks.push(path.relative(process.cwd(), absolutePath));
-    }
+    const relativePath = path.relative(process.cwd(), absolutePath);
+    if (/\bcatch\s*\{/.test(source))
+      incompatibleChunks.push(`${relativePath}: optional catch binding`);
+    if (/\bglobalThis\.AsyncLocalStorage\b/.test(source))
+      incompatibleChunks.push(`${relativePath}: unsafe globalThis access`);
   }
 }
 
@@ -29,9 +31,7 @@ checkDirectory(chunksDirectory);
 
 if (incompatibleChunks.length > 0) {
   console.error(
-    `Chrome 62-incompatible optional catch binding found in:\n${incompatibleChunks.join(
-      '\n'
-    )}`
+    `Chrome 62-incompatible code found in:\n${incompatibleChunks.join('\n')}`
   );
   process.exit(1);
 }

@@ -96,6 +96,13 @@ export default async function RootLayout({
   return (
     <html lang='zh-CN' suppressHydrationWarning className={inter.variable}>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if (typeof globalThis === 'undefined') { window.globalThis = window; }",
+          }}
+        />
+
         {/* Favicon - using high resolution icon */}
         <link
           rel='icon'
