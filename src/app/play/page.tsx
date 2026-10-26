@@ -1017,6 +1017,9 @@ function PlayPageClient() {
 
     const video = videoRef.current;
     if (!video) return;
+    if (navigator.userAgent.includes('TintinTVAndroidTV/')) {
+      continuePlayingRef.current = true;
+    }
     setPlaybackError(false);
     setAdFilterUnavailable(false);
     setIsVideoLoading(true);

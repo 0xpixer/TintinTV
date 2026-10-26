@@ -2,6 +2,7 @@
 
 'use client';
 
+import { ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -71,8 +72,6 @@ function DoubanPageClient() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [selectorsReady, setSelectorsReady] = useState(false);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadingRef = useRef<HTMLDivElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialRequestRef = useRef(0);
   const loadRequestPendingRef = useRef(false);
@@ -214,6 +213,7 @@ function DoubanPageClient() {
     setHasMore(true);
     setIsLoadingMore(false);
     loadRequestPendingRef.current = false;
+    initialRequestRef.current += 1;
 
     // 清除之前的防抖定时器
     if (debounceTimeoutRef.current) {
@@ -239,83 +239,78 @@ function DoubanPageClient() {
     loadInitialData,
   ]);
 
-  // 单独处理 currentPage 变化（加载更多）
-  useEffect(() => {
-    if (currentPage > 0) {
-      const fetchMoreData = async () => {
-        try {
-          setIsLoadingMore(true);
+  const loadPage = useCallback(
+    async (page: number) => {
+      if (page < 0 || loadRequestPendingRef.current) return;
+      loadRequestPendingRef.current = true;
+      setIsLoadingMore(true);
+      setLoadError('');
+      const requestId = ++initialRequestRef.current;
+      const params = getRequestParams(page * 25);
+      const cacheKey = getCategoryCacheKey(params);
+      const cachedItems = readCategoryCache(cacheKey);
 
-          const data = await getDoubanCategories(
-            getRequestParams(currentPage * 25)
-          );
+      if (cachedItems?.length) {
+        setDoubanData(cachedItems);
+        setCurrentPage(page);
+        setHasMore(cachedItems.length === params.pageLimit);
+      }
 
-          if (data.code === 200) {
-            setDoubanData((prev) => {
-              const existingIds = new Set(prev.map(({ id }) => id));
-              return [
-                ...prev,
-                ...data.list.filter(({ id }) => !existingIds.has(id)),
-              ];
+      try {
+        const data = await getDoubanCategories(params);
+        if (requestId !== initialRequestRef.current) return;
+        if (data.code !== 200) {
+          throw new Error(data.message || '获取数据失败');
+        }
+        if (data.list.length === 0 && page > 0) {
+          setHasMore(false);
+          return;
+        }
+
+        setDoubanData(data.list);
+        setCurrentPage(page);
+        setHasMore(data.list.length === params.pageLimit);
+        if (data.list.length) writeCategoryCache(cacheKey, data.list);
+
+        if (navigator.userAgent.includes('TintinTVAndroidTV/')) {
+          window.requestAnimationFrame(() => {
+            const firstCard = document.querySelector<HTMLElement>(
+              '.tv-library .tv-video-card'
+            );
+            firstCard?.focus({ preventScroll: true });
+            firstCard?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+              inline: 'center',
             });
-            setHasMore(data.list.length === 25);
-          } else {
-            throw new Error(data.message || '获取数据失败');
-          }
-        } catch (err) {
-          console.error(err);
-        } finally {
+          });
+        } else {
+          document
+            .querySelector('.tv-library')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } catch (err) {
+        if (requestId !== initialRequestRef.current) return;
+        console.error(err);
+        if (!cachedItems?.length) {
+          setLoadError('此页暂时无法加载，请重试。');
+        }
+      } finally {
+        if (requestId === initialRequestRef.current) {
           setIsLoadingMore(false);
           loadRequestPendingRef.current = false;
         }
-      };
-
-      fetchMoreData();
-    }
-  }, [
-    currentPage,
-    type,
-    primarySelection,
-    secondarySelection,
-    getRequestParams,
-  ]);
+      }
+    },
+    [getRequestParams]
+  );
 
   const requestNextPage = useCallback(() => {
     if (loading || isLoadingMore || !hasMore || loadRequestPendingRef.current) {
       return;
     }
-    loadRequestPendingRef.current = true;
-    setCurrentPage((prev) => prev + 1);
-  }, [hasMore, isLoadingMore, loading]);
-
-  // 设置滚动监听
-  useEffect(() => {
-    // 如果没有更多数据或正在加载，则不设置监听
-    if (!hasMore || isLoadingMore || loading) {
-      return;
-    }
-
-    // 确保 loadingRef 存在
-    if (!loadingRef.current) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) requestNextPage();
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(loadingRef.current);
-    observerRef.current = observer;
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, [hasMore, isLoadingMore, loading, requestNextPage]);
+    void loadPage(currentPage + 1);
+  }, [currentPage, hasMore, isLoadingMore, loadPage, loading]);
 
   useEffect(() => {
     const handleTvLoadMore = () => requestNextPage();
@@ -424,34 +419,41 @@ function DoubanPageClient() {
             )}
           </div>
 
-          {/* 加载更多指示器 */}
-          {hasMore && !loading && (
-            <div
-              ref={(el) => {
-                if (el && el.offsetParent !== null) {
-                  (
-                    loadingRef as React.MutableRefObject<HTMLDivElement | null>
-                  ).current = el;
-                }
-              }}
-              className='flex justify-center mt-12 py-8'
+          {!loading && doubanData.length > 0 && (
+            <nav
+              className='tv-pagination'
+              data-tv-section='category-pagination'
+              aria-label='内容翻页'
             >
-              {isLoadingMore && (
-                <div className='flex items-center gap-2'>
-                  <div className='h-6 w-6 animate-spin rounded-full border-b-2 border-brand-500'></div>
-                  <span className='text-slate-600 dark:text-slate-300'>
-                    加载中...
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 没有更多数据提示 */}
-          {!hasMore && doubanData.length > 0 && (
-            <div className='py-8 text-center text-slate-500 dark:text-slate-400'>
-              已加载全部内容
-            </div>
+              <button
+                type='button'
+                className='tv-pagination-button'
+                disabled={currentPage === 0 || isLoadingMore}
+                onClick={() => void loadPage(currentPage - 1)}
+              >
+                <ChevronLeft aria-hidden='true' />
+                <span>上一页</span>
+              </button>
+              <span className='tv-pagination-status' aria-live='polite'>
+                {isLoadingMore ? (
+                  <>
+                    <LoaderCircle className='animate-spin' aria-hidden='true' />
+                    正在加载
+                  </>
+                ) : (
+                  `第 ${currentPage + 1} 页${hasMore ? '' : ' · 已到最后一页'}`
+                )}
+              </span>
+              <button
+                type='button'
+                className='tv-pagination-button'
+                disabled={!hasMore || isLoadingMore}
+                onClick={requestNextPage}
+              >
+                <span>下一页</span>
+                <ChevronRight aria-hidden='true' />
+              </button>
+            </nav>
           )}
 
           {/* 空状态 */}

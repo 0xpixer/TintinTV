@@ -1152,6 +1152,46 @@ html:not(.dark) .tv-mobile-header-actions button:hover {
   gap: 20px 16px;
 }
 
+.tv-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 42px 0 10px;
+}
+.tv-pagination-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--tv-line);
+  border-radius: 8px;
+  padding: 0 18px;
+  color: var(--tv-text);
+  background: var(--tv-surface-raised);
+  font-size: 14px;
+  font-weight: 650;
+}
+.tv-pagination-button svg,
+.tv-pagination-status svg {
+  width: 18px;
+  height: 18px;
+}
+.tv-pagination-button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+.tv-pagination-status {
+  display: inline-flex;
+  min-width: 150px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--tv-muted);
+  font-size: 14px;
+}
+
 .tv-search form {
   max-width: 760px;
   margin-left: auto;
@@ -1715,6 +1755,19 @@ html:not(.dark) .tv-mobile-header-actions button:hover {
   font-size: 17px;
   line-height: 1.35;
 }
+.tv-device .tv-pagination {
+  gap: 24px;
+  padding-top: 52px;
+}
+.tv-device .tv-pagination-button {
+  min-width: 150px;
+  min-height: 56px;
+  font-size: 18px;
+}
+.tv-device .tv-pagination-status {
+  min-width: 220px;
+  font-size: 17px;
+}
 .tv-device .tv-episode-panel button {
   min-width: 54px;
   min-height: 48px;
@@ -1748,7 +1801,8 @@ html:not(.dark) .tv-mobile-header-actions button:hover {
   scroll-snap-align: center;
 }
 .tv-device .tv-player-frame video:focus {
-  outline-offset: -6px;
+  outline: none;
+  box-shadow: none;
 }
 .tv-device .tv-episode-panel {
   padding-block: 8px 18px;

@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { handleTvPlayerKey } from '@/lib/tv-player-controls';
 import {
   findNextSpatialTarget,
   SpatialDirection,
@@ -69,15 +70,8 @@ function focusElement(target: HTMLElement, direction?: SpatialDirection) {
 
 function isContentTarget(element: HTMLElement) {
   return element.matches(
-    '.tv-video-card, .tv-play-recommendation, .tv-hero-resume-item'
+    '.tv-video-card, .tv-play-recommendation, .tv-hero-resume-item, .tv-pagination-button'
   );
-}
-
-function requestTvFullscreen(video: HTMLVideoElement) {
-  if (!document.fullscreenElement) {
-    void video.requestFullscreen?.().catch(() => undefined);
-  }
-  void video.play().catch(() => undefined);
 }
 
 export function findPlayFocusBridgeTarget(
@@ -133,12 +127,16 @@ export default function TvFocusManager() {
       if (!active) return;
 
       if (
-        event.key === 'Enter' &&
         active instanceof HTMLVideoElement &&
-        active.matches('[data-tv-player]')
+        active.matches('[data-tv-player]') &&
+        handleTvPlayerKey(
+          active,
+          event.key,
+          Boolean(document.fullscreenElement)
+        )
       ) {
         event.preventDefault();
-        requestTvFullscreen(active);
+        event.stopImmediatePropagation();
         return;
       }
 

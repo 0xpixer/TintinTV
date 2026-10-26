@@ -66,10 +66,10 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         String fireTvAgent = "Amazon".equalsIgnoreCase(Build.MANUFACTURER)
-                ? " TintinTVFireTV/1.2.1"
+                ? " TintinTVFireTV/1.2.2"
                 : "";
         settings.setUserAgentString(settings.getUserAgentString()
-                + " TintinTVAndroidTV/1.2.1" + fireTvAgent);
+                + " TintinTVAndroidTV/1.2.2" + fireTvAgent);
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
@@ -305,6 +305,9 @@ public class MainActivity extends Activity {
             webChromeClient.onHideCustomView();
             return true;
         }
+        if (fullscreenView != null && handleFullscreenRemoteKey(keyCode)) {
+            return true;
+        }
         if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
             webView.goBack();
             return true;
@@ -324,6 +327,25 @@ public class MainActivity extends Activity {
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private boolean handleFullscreenRemoteKey(int keyCode) {
+        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+            seekPlayback(-10);
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+            seekPlayback(10);
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER
+                || keyCode == KeyEvent.KEYCODE_ENTER
+                || keyCode == KeyEvent.KEYCODE_SPACE) {
+            togglePlayback(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+            return true;
+        }
+        return keyCode == KeyEvent.KEYCODE_DPAD_UP
+                || keyCode == KeyEvent.KEYCODE_DPAD_DOWN;
     }
 
     private void togglePlayback(int keyCode) {
