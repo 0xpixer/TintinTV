@@ -3,7 +3,11 @@
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { handleTvPlayerKey } from '@/lib/tv-player-controls';
+import {
+  emitTvPlayerFeedback,
+  getTvPlayerFeedback,
+  handleTvPlayerKey,
+} from '@/lib/tv-player-controls';
 import {
   findNextSpatialTarget,
   SpatialDirection,
@@ -128,16 +132,22 @@ export default function TvFocusManager() {
 
       if (
         active instanceof HTMLVideoElement &&
-        active.matches('[data-tv-player]') &&
-        handleTvPlayerKey(
-          active,
-          event.key,
-          Boolean(document.fullscreenElement)
-        )
+        active.matches('[data-tv-player]')
       ) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        return;
+        const wasPaused = active.paused;
+        if (
+          handleTvPlayerKey(
+            active,
+            event.key,
+            Boolean(document.fullscreenElement)
+          )
+        ) {
+          const feedback = getTvPlayerFeedback(active, event.key, wasPaused);
+          if (feedback) emitTvPlayerFeedback(feedback);
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return;
+        }
       }
 
       const direction = event.key.replace('Arrow', '').toLowerCase() as

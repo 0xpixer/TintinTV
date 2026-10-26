@@ -66,10 +66,10 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         String fireTvAgent = "Amazon".equalsIgnoreCase(Build.MANUFACTURER)
-                ? " TintinTVFireTV/1.2.2"
+                ? " TintinTVFireTV/1.2.3"
                 : "";
         settings.setUserAgentString(settings.getUserAgentString()
-                + " TintinTVAndroidTV/1.2.2" + fireTvAgent);
+                + " TintinTVAndroidTV/1.2.3" + fireTvAgent);
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
@@ -355,8 +355,12 @@ public class MainActivity extends Activity {
         webView.evaluateJavascript(
                 "(function(action){var video=document.querySelector('video');"
                         + "if(!video)return false;"
-                        + "if(action==='play'||(action==='toggle'&&video.paused))video.play();"
-                        + "else video.pause();return true;})('" + requestedAction + "')",
+                        + "var shouldPlay=action==='play'||(action==='toggle'&&video.paused);"
+                        + "if(shouldPlay)video.play();else video.pause();"
+                        + "window.dispatchEvent(new CustomEvent('tintintv:tv-player-feedback',"
+                        + "{detail:{message:shouldPlay?'播放':'暂停',currentTime:video.currentTime,"
+                        + "duration:isFinite(video.duration)?video.duration:0}}));"
+                        + "return true;})('" + requestedAction + "')",
                 null
         );
     }
@@ -367,6 +371,9 @@ public class MainActivity extends Activity {
                         + "if(!video)return false;"
                         + "var duration=isFinite(video.duration)?video.duration:video.currentTime+offset;"
                         + "video.currentTime=Math.max(0,Math.min(duration,video.currentTime+offset));"
+                        + "window.dispatchEvent(new CustomEvent('tintintv:tv-player-feedback',"
+                        + "{detail:{message:offset>0?'快进 10 秒':'快退 10 秒',"
+                        + "currentTime:video.currentTime,duration:isFinite(video.duration)?video.duration:0}}));"
                         + "return true;})(" + seconds + ")",
                 null
         );

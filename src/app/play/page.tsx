@@ -32,6 +32,10 @@ import {
   playbackProbePath,
 } from '@/lib/playback-source-match';
 import { rankSourceTestResults } from '@/lib/source-ranking';
+import {
+  requestTvPlayerFullscreen,
+  TvPlayerFeedback,
+} from '@/lib/tv-player-controls';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 
@@ -67,7 +71,11 @@ function PlayPageClient() {
   const [playbackError, setPlaybackError] = useState(false);
   const [adFilterUnavailable, setAdFilterUnavailable] = useState(false);
   const [playbackAttempt, setPlaybackAttempt] = useState(0);
+  const [isTvDevice, setIsTvDevice] = useState(false);
+  const [tvPlayerFeedback, setTvPlayerFeedback] =
+    useState<TvPlayerFeedback | null>(null);
   const continuePlayingRef = useRef(false);
+  const tvFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     try {
       setBlockAdEnabled(localStorage.getItem('enable_blockad') !== 'false');
@@ -75,6 +83,31 @@ function PlayPageClient() {
       // Private browsing can deny storage; the switch still works in memory.
     }
     setAdSettingReady(true);
+  }, []);
+
+  useEffect(() => {
+    setIsTvDevice(navigator.userAgent.includes('TintinTVAndroidTV/'));
+
+    const handleFeedback = (event: Event) => {
+      const feedback = (event as CustomEvent<TvPlayerFeedback>).detail;
+      if (!feedback) return;
+      setTvPlayerFeedback(feedback);
+      if (tvFeedbackTimerRef.current) {
+        clearTimeout(tvFeedbackTimerRef.current);
+      }
+      tvFeedbackTimerRef.current = setTimeout(
+        () => setTvPlayerFeedback(null),
+        1800
+      );
+    };
+
+    window.addEventListener('tintintv:tv-player-feedback', handleFeedback);
+    return () => {
+      window.removeEventListener('tintintv:tv-player-feedback', handleFeedback);
+      if (tvFeedbackTimerRef.current) {
+        clearTimeout(tvFeedbackTimerRef.current);
+      }
+    };
   }, []);
 
   // 视频基本信息
@@ -677,7 +710,7 @@ function PlayPageClient() {
     continuePlayingRef.current = true;
     const video = videoRef.current;
     if (video && !document.fullscreenElement) {
-      void video.requestFullscreen?.().catch(() => undefined);
+      requestTvPlayerFullscreen(video);
     }
     return true;
   };
@@ -1101,7 +1134,7 @@ function PlayPageClient() {
         navigator.userAgent.includes('TintinTVAndroidTV/') &&
         !document.fullscreenElement
       ) {
-        void video.requestFullscreen?.().catch(() => undefined);
+        requestTvPlayerFullscreen(video);
       }
     };
     const onPlaybackError = () => {
@@ -1323,19 +1356,48 @@ function PlayPageClient() {
           </p>
         </div>
         <div className='tv-player-frame min-w-0'>
-          <div className='relative w-full overflow-hidden bg-black'>
+          <div
+            className='tv-player-shell relative w-full overflow-hidden bg-black'
+            data-tv-player-shell
+          >
             <video
               ref={videoRef}
               data-tv-player
               tabIndex={0}
               aria-label={`${videoTitle || '影片'}播放器，确认键播放并进入全屏`}
               className='bg-black w-full h-full object-contain overflow-hidden'
-              controls
+              controls={!isTvDevice}
               playsInline
               webkit-playsinline='true'
               x-webkit-airplay='allow'
               preload='metadata'
             />
+            {tvPlayerFeedback && (
+              <div
+                className='tv-player-feedback'
+                role='status'
+                aria-live='polite'
+              >
+                <strong>{tvPlayerFeedback.message}</strong>
+                {tvPlayerFeedback.duration > 0 && (
+                  <span className='tv-player-feedback-track' aria-hidden='true'>
+                    <span
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.max(
+                            0,
+                            (tvPlayerFeedback.currentTime /
+                              tvPlayerFeedback.duration) *
+                              100
+                          )
+                        )}%`,
+                      }}
+                    />
+                  </span>
+                )}
+              </div>
+            )}
             {playbackError && (
               <div
                 role='alert'

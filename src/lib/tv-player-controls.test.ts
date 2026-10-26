@@ -1,4 +1,4 @@
-import { handleTvPlayerKey } from './tv-player-controls';
+import { getTvPlayerFeedback, handleTvPlayerKey } from './tv-player-controls';
 
 function mockVideo(overrides: Partial<HTMLVideoElement> = {}) {
   return {
@@ -28,6 +28,21 @@ describe('TV player remote controls', () => {
     expect(video.play).toHaveBeenCalledTimes(1);
   });
 
+  it('fullscreens the stable player shell instead of the video surface', () => {
+    const shell = {
+      requestFullscreen: jest.fn().mockResolvedValue(undefined),
+    } as unknown as HTMLElement;
+    const video = mockVideo({
+      paused: true,
+      closest: jest.fn().mockReturnValue(shell),
+    });
+
+    handleTvPlayerKey(video, 'Enter', false);
+
+    expect(shell.requestFullscreen).toHaveBeenCalledTimes(1);
+    expect(video.requestFullscreen).not.toHaveBeenCalled();
+  });
+
   it('toggles pause only after playback is already fullscreen', () => {
     const video = mockVideo();
     expect(handleTvPlayerKey(video, 'Enter', false)).toBe(true);
@@ -40,5 +55,14 @@ describe('TV player remote controls', () => {
     const video = mockVideo();
     expect(handleTvPlayerKey(video, 'ArrowUp', false)).toBe(true);
     expect(handleTvPlayerKey(video, 'ArrowDown', false)).toBe(true);
+  });
+
+  it('describes seek feedback for the temporary TV overlay', () => {
+    const video = mockVideo({ currentTime: 50 });
+    expect(getTvPlayerFeedback(video, 'ArrowRight', false)).toEqual({
+      message: '快进 10 秒',
+      currentTime: 50,
+      duration: 120,
+    });
   });
 });
