@@ -68,10 +68,10 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         String fireTvAgent = "Amazon".equalsIgnoreCase(Build.MANUFACTURER)
-                ? " TintinTVFireTV/1.2.4"
+                ? " TintinTVFireTV/1.2.6"
                 : "";
         settings.setUserAgentString(settings.getUserAgentString()
-                + " TintinTVAndroidTV/1.2.4" + fireTvAgent);
+                + " TintinTVAndroidTV/1.2.6" + fireTvAgent);
 
         webView.addJavascriptInterface(new TvJavascriptBridge(), "TintinTVBridge");
 
