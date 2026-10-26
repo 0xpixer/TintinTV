@@ -14,6 +14,7 @@ import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.webkit.CookieManager;
 import android.webkit.ConsoleMessage;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceError;
@@ -39,6 +40,7 @@ public class MainActivity extends Activity {
     private WebChromeClient webChromeClient;
     private View fullscreenView;
     private WebChromeClient.CustomViewCallback fullscreenCallback;
+    private volatile boolean webFullscreenActive;
     private boolean mainFrameLoadFailed;
     private int authRecoveryAttempts;
     private String lastWebError = "";
@@ -66,10 +68,12 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         String fireTvAgent = "Amazon".equalsIgnoreCase(Build.MANUFACTURER)
-                ? " TintinTVFireTV/1.2.3"
+                ? " TintinTVFireTV/1.2.4"
                 : "";
         settings.setUserAgentString(settings.getUserAgentString()
-                + " TintinTVAndroidTV/1.2.3" + fireTvAgent);
+                + " TintinTVAndroidTV/1.2.4" + fireTvAgent);
+
+        webView.addJavascriptInterface(new TvJavascriptBridge(), "TintinTVBridge");
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
@@ -120,6 +124,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                 mainFrameLoadFailed = false;
+                webFullscreenActive = false;
                 lastWebError = "";
                 if (isLoginUrl(url)) {
                     showStatus("Reconnecting to TintinTV...");
@@ -148,6 +153,7 @@ public class MainActivity extends Activity {
                 statusView.setVisibility(View.GONE);
                 webView.setVisibility(View.VISIBLE);
                 webView.requestFocus();
+                installFullscreenBridge();
                 view.postDelayed(() -> checkPageRendered(url), 12000);
             }
 
@@ -193,6 +199,23 @@ public class MainActivity extends Activity {
                             + "\n" + detail + "\nPress OK to retry.");
                 }
         );
+    }
+
+    private void installFullscreenBridge() {
+        webView.evaluateJavascript(
+                "(function(){if(window.__tintinTvFullscreenBridge)return;"
+                        + "window.__tintinTvFullscreenBridge=true;"
+                        + "function sync(){window.TintinTVBridge.setFullscreen(!!document.fullscreenElement);}"
+                        + "document.addEventListener('fullscreenchange',sync);sync();})()",
+                null
+        );
+    }
+
+    private final class TvJavascriptBridge {
+        @JavascriptInterface
+        public void setFullscreen(boolean active) {
+            webFullscreenActive = active;
+        }
     }
 
     private void setupViews() {
@@ -305,7 +328,15 @@ public class MainActivity extends Activity {
             webChromeClient.onHideCustomView();
             return true;
         }
-        if (fullscreenView != null && handleFullscreenRemoteKey(keyCode)) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && webFullscreenActive) {
+            webView.evaluateJavascript(
+                    "if(document.fullscreenElement)document.exitFullscreen()",
+                    null
+            );
+            return true;
+        }
+        if ((fullscreenView != null || webFullscreenActive)
+                && handleFullscreenRemoteKey(keyCode)) {
             return true;
         }
         if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
