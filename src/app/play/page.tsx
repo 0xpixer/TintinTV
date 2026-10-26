@@ -29,6 +29,7 @@ import { readPlayItemsFromSearchParams } from '@/lib/play-handoff';
 import {
   matchingPlaybackSources,
   nextUntriedPlaybackSource,
+  playbackProbePath,
 } from '@/lib/playback-source-match';
 import { rankSourceTestResults } from '@/lib/source-ranking';
 import { SearchResult } from '@/lib/types';
@@ -223,11 +224,9 @@ function PlayPageClient() {
               return null;
             }
 
-            const episodeUrl =
-              source.episodes.length > 1
-                ? source.episodes[1]
-                : source.episodes[0];
-            const testResult = await getVideoResolutionFromM3u8(episodeUrl);
+            const testResult = await getVideoResolutionFromM3u8(
+              playbackProbePath(source)
+            );
 
             return {
               source,
@@ -277,6 +276,17 @@ function PlayPageClient() {
 
     // 按综合评分排序，选择最佳播放源
     const resultsWithScore = rankSourceTestResults(successfulResults);
+    const successfulSourceKeys = new Set(
+      resultsWithScore.map(({ source }) => `${source.source}:${source.id}`)
+    );
+    const orderedSources = [
+      ...resultsWithScore.map(({ source }) => source),
+      ...sources.filter(
+        (source) => !successfulSourceKeys.has(`${source.source}:${source.id}`)
+      ),
+    ];
+    setAvailableSources(orderedSources);
+    availableSourcesRef.current = orderedSources;
 
     console.log('播放源评分排序结果:');
     resultsWithScore.forEach((result, index) => {
@@ -415,9 +425,36 @@ function PlayPageClient() {
         const preWithEpisodes = preloadedItems.filter(
           (r) => Array.isArray(r.episodes) && r.episodes.length > 0
         );
-        const chosen =
+        let chosen =
           preWithEpisodes.length > 0 ? preWithEpisodes : preloadedItems;
+        const seed = chosen[0];
+        try {
+          const response = await fetch(
+            `/api/search?q=${encodeURIComponent(seed.title.trim())}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            const discovered = matchingPlaybackSources(
+              Array.isArray(data.results) ? data.results : [],
+              seed.title,
+              seed.year,
+              seed.episodes.length > 1 ? 'tv' : 'movie'
+            );
+            const known = new Set(
+              chosen.map((item) => `${item.source}:${item.id}`)
+            );
+            chosen = [
+              ...chosen,
+              ...discovered.filter(
+                (item) => !known.has(`${item.source}:${item.id}`)
+              ),
+            ];
+          }
+        } catch (error) {
+          console.warn('补充聚合播放源失败:', error);
+        }
         setAvailableSources(chosen);
+        availableSourcesRef.current = chosen;
         // 若初始没有标题，则用第一项的标题和年份做兜底
         if (!videoTitleRef.current) {
           setVideoTitle(chosen[0].title);

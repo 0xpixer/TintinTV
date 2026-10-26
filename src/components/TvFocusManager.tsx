@@ -167,11 +167,15 @@ export default function TvFocusManager() {
         }
       }
 
+      const openMenu = document.querySelector<HTMLElement>('[data-tv-menu]');
       let candidates = focusable.filter((element) => element !== active);
-      if (
-        (direction === 'up' || direction === 'down') &&
-        isContentTarget(active)
-      ) {
+      if (openMenu) {
+        candidates = candidates.filter(
+          (element) =>
+            element.closest('[data-tv-menu]') ||
+            element.matches('[data-tv-menu-trigger]')
+        );
+      } else if (isContentTarget(active)) {
         const contentCandidates = candidates.filter(isContentTarget);
         if (contentCandidates.length > 0) candidates = contentCandidates;
       }
@@ -181,7 +185,21 @@ export default function TvFocusManager() {
         candidates,
         direction as SpatialDirection
       );
-      if (!target) return;
+      if (!target) {
+        if (direction === 'down' && isContentTarget(active)) {
+          event.preventDefault();
+          window.dispatchEvent(new Event('tintintv:tv-load-more'));
+        } else if (direction === 'up' && isContentTarget(active)) {
+          const menuTrigger = document.querySelector<HTMLElement>(
+            '[data-tv-menu-trigger]'
+          );
+          if (menuTrigger && isVisible(menuTrigger)) {
+            event.preventDefault();
+            focusElement(menuTrigger, 'up');
+          }
+        }
+        return;
+      }
 
       event.preventDefault();
       event.stopPropagation();

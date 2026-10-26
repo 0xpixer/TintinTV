@@ -79,6 +79,55 @@ describe('Douban category route', () => {
     expect(fetchMock.mock.calls[1][0]).toContain('/j/search_subjects?');
   });
 
+  it('fills a short primary page from the fallback list without duplicates', async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          items: [
+            {
+              id: '1',
+              title: 'One',
+              card_subtitle: '2025',
+              pic: { normal: 'one.jpg', large: 'one-large.jpg' },
+              rating: { value: 8 },
+            },
+            {
+              id: '2',
+              title: 'Two',
+              card_subtitle: '2025',
+              pic: { normal: 'two.jpg', large: 'two-large.jpg' },
+              rating: { value: 7 },
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          subjects: [
+            { id: '2', title: 'Two', cover: 'two.jpg', rate: '7.0' },
+            { id: '3', title: 'Three', cover: 'three.jpg', rate: '8.0' },
+            { id: '4', title: 'Four', cover: 'four.jpg', rate: '9.0' },
+          ],
+        }),
+      });
+    global.fetch = fetchMock as typeof fetch;
+    mockedGetCacheTime.mockResolvedValue(3600);
+
+    const response = await GET(
+      new Request(
+        'https://example.com/api/douban/categories?kind=movie&category=%E7%83%AD%E9%97%A8&type=%E5%85%A8%E9%83%A8&limit=4&start=50'
+      )
+    );
+
+    expect(
+      (await response.json()).list.map(({ id }: { id: string }) => id)
+    ).toEqual(['1', '2', '3', '4']);
+    expect(fetchMock.mock.calls[1][0]).toContain('page_limit=8');
+  });
+
   it('serves movie data when cache configuration is unavailable', async () => {
     jest.spyOn(console, 'warn').mockImplementation();
     global.fetch = jest.fn().mockResolvedValue({

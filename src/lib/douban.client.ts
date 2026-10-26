@@ -1,6 +1,7 @@
 import {
   buildDoubanFallbackUrl,
   getDoubanFallbackQuery,
+  mergeDoubanCategoryPage,
 } from './douban-fallback';
 import { DoubanItem, DoubanResult } from './types';
 import { getDoubanProxyUrl } from './utils';
@@ -134,11 +135,39 @@ export async function fetchDoubanCategories(
       year: item.card_subtitle?.match(/(\d{4})/)?.[1] || '',
     }));
 
-    return {
-      code: 200,
-      message: '获取成功',
-      list: list,
-    };
+    if (list.length >= pageLimit) {
+      return { code: 200, message: '获取成功', list };
+    }
+
+    const fallbackQuery = getDoubanFallbackQuery(kind, category, type);
+    if (!fallbackQuery) return { code: 200, message: '获取成功', list };
+
+    try {
+      const fallbackResponse = await fetchWithTimeout(
+        buildDoubanFallbackUrl(
+          fallbackQuery,
+          Math.min(100, pageLimit * 2),
+          pageStart
+        )
+      );
+      if (!fallbackResponse.ok) return { code: 200, message: '获取成功', list };
+      const fallbackData: DoubanMovieApiResponse =
+        await fallbackResponse.json();
+      const fallbackList: DoubanItem[] = fallbackData.subjects.map((item) => ({
+        id: item.id,
+        title: item.title,
+        poster: item.cover,
+        rate: item.rate,
+        year: '',
+      }));
+      return {
+        code: 200,
+        message: '获取成功',
+        list: mergeDoubanCategoryPage(list, fallbackList, pageLimit),
+      };
+    } catch {
+      return { code: 200, message: '获取成功', list };
+    }
   } catch (error) {
     const fallbackQuery = getDoubanFallbackQuery(kind, category, type);
     if (fallbackQuery) {

@@ -1,7 +1,25 @@
+import { DoubanItem } from './types';
+
 export interface DoubanFallbackQuery {
   type: 'movie' | 'tv';
   tag: string;
   sort: 'recommend' | 'time' | 'rank';
+}
+
+export function mergeDoubanCategoryPage(
+  primary: DoubanItem[],
+  fallback: DoubanItem[],
+  limit: number
+): DoubanItem[] {
+  const seen = new Set<string>();
+
+  return [...primary, ...fallback]
+    .filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    })
+    .slice(0, limit);
 }
 
 const TV_TAGS: Record<string, string> = {

@@ -5,6 +5,7 @@ import {
   Film,
   Heart,
   Home,
+  Menu,
   Radio,
   Search,
   Sparkles,
@@ -13,6 +14,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
 import { useSite } from './SiteProvider';
 import { ThemeToggle } from './ThemeToggle';
@@ -39,13 +41,65 @@ export default function Sidebar({ activePath }: SidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { siteName } = useSite();
+  const [tvMenuOpen, setTvMenuOpen] = useState(false);
+  const tvMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const queryString = searchParams.toString();
   const current =
     activePath || `${pathname}${queryString ? `?${queryString}` : ''}`;
 
+  const isItemActive = (href: string) => {
+    const [path, query] = href.split('?');
+    return path === '/douban'
+      ? current.startsWith('/douban') && current.includes(query)
+      : current === path;
+  };
+
+  useEffect(() => {
+    setTvMenuOpen(false);
+  }, [pathname, queryString]);
+
+  useEffect(() => {
+    if (!tvMenuOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(
+          '#tv-tv-menu [aria-current="page"], #tv-tv-menu a'
+        )
+        ?.focus();
+    });
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' && event.key !== 'BrowserBack') return;
+      event.preventDefault();
+      setTvMenuOpen(false);
+      window.requestAnimationFrame(() => tvMenuTriggerRef.current?.focus());
+    };
+    document.addEventListener('keydown', closeOnEscape, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener('keydown', closeOnEscape, true);
+    };
+  }, [tvMenuOpen]);
+
   return (
     <header className='tv-desktop-nav'>
-      <Link href='/' className='tv-brand' aria-label={`${siteName} 首页`}>
+      <button
+        ref={tvMenuTriggerRef}
+        type='button'
+        className='tv-tv-menu-trigger'
+        data-tv-menu-trigger
+        aria-label={tvMenuOpen ? '关闭导航菜单' : '打开导航菜单'}
+        aria-expanded={tvMenuOpen}
+        aria-controls='tv-tv-menu'
+        onClick={() => setTvMenuOpen((open) => !open)}
+      >
+        <Menu aria-hidden='true' />
+      </button>
+      <Link
+        href='/'
+        className='tv-brand'
+        aria-label={`${siteName} 首页`}
+        data-tv-focus='ignore'
+      >
         <span className='tv-brand-wordmark'>
           <Image
             src='/TINTINTV%20LOGO%20WHITE.png'
@@ -60,11 +114,7 @@ export default function Sidebar({ activePath }: SidebarProps) {
       </Link>
       <nav className='tv-nav-links' aria-label='主要导航'>
         {primaryItems.map(({ href, label, icon: Icon }) => {
-          const [path, query] = href.split('?');
-          const active =
-            path === '/douban'
-              ? current.startsWith('/douban') && current.includes(query)
-              : current === path;
+          const active = isItemActive(href);
           return (
             <Link
               key={href}
@@ -97,6 +147,29 @@ export default function Sidebar({ activePath }: SidebarProps) {
         <ThemeToggle />
         <UserMenu />
       </div>
+      {tvMenuOpen && (
+        <nav
+          id='tv-tv-menu'
+          className='tv-tv-menu'
+          data-tv-menu
+          aria-label='电视导航'
+        >
+          {[...primaryItems, ...quickItems].map(
+            ({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className='tv-tv-menu-link'
+                aria-current={isItemActive(href) ? 'page' : undefined}
+                onClick={() => setTvMenuOpen(false)}
+              >
+                <Icon aria-hidden='true' />
+                <span>{label}</span>
+              </Link>
+            )
+          )}
+        </nav>
+      )}
     </header>
   );
 }

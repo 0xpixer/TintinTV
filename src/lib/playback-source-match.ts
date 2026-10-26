@@ -38,3 +38,12 @@ export function nextUntriedPlaybackSource(
 ): SearchResult | undefined {
   return sources.find((source) => !tried.has(`${source.source}:${source.id}`));
 }
+
+export function playbackProbePath(source: SearchResult): string {
+  return `/api/play/manifest?${new URLSearchParams({
+    source: source.source,
+    id: source.id,
+    episode: '0',
+    filter: '0',
+  }).toString()}`;
+}

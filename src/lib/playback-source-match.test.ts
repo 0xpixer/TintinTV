@@ -1,6 +1,7 @@
 import {
   matchingPlaybackSources,
   nextUntriedPlaybackSource,
+  playbackProbePath,
 } from './playback-source-match';
 import { SearchResult } from './types';
 
@@ -103,5 +104,16 @@ describe('automatic playback source matching', () => {
         new Set(['demo:希望-2026', 'other:希望2026-unknown'])
       )
     ).toBeUndefined();
+  });
+
+  it('probes playback through the same-origin manifest route', () => {
+    const source = {
+      ...result('铁拳教育'),
+      id: 'show/id',
+      source: '量子 资源',
+    };
+    expect(playbackProbePath(source)).toBe(
+      '/api/play/manifest?source=%E9%87%8F%E5%AD%90+%E8%B5%84%E6%BA%90&id=show%2Fid&episode=0&filter=0'
+    );
   });
 });

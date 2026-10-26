@@ -75,6 +75,7 @@ function DoubanPageClient() {
   const loadingRef = useRef<HTMLDivElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialRequestRef = useRef(0);
+  const loadRequestPendingRef = useRef(false);
 
   const type = searchParams.get('type') || 'movie';
 
@@ -212,6 +213,7 @@ function DoubanPageClient() {
     setCurrentPage(0);
     setHasMore(true);
     setIsLoadingMore(false);
+    loadRequestPendingRef.current = false;
 
     // 清除之前的防抖定时器
     if (debounceTimeoutRef.current) {
@@ -249,7 +251,13 @@ function DoubanPageClient() {
           );
 
           if (data.code === 200) {
-            setDoubanData((prev) => [...prev, ...data.list]);
+            setDoubanData((prev) => {
+              const existingIds = new Set(prev.map(({ id }) => id));
+              return [
+                ...prev,
+                ...data.list.filter(({ id }) => !existingIds.has(id)),
+              ];
+            });
             setHasMore(data.list.length === 25);
           } else {
             throw new Error(data.message || '获取数据失败');
@@ -258,6 +266,7 @@ function DoubanPageClient() {
           console.error(err);
         } finally {
           setIsLoadingMore(false);
+          loadRequestPendingRef.current = false;
         }
       };
 
@@ -270,6 +279,14 @@ function DoubanPageClient() {
     secondarySelection,
     getRequestParams,
   ]);
+
+  const requestNextPage = useCallback(() => {
+    if (loading || isLoadingMore || !hasMore || loadRequestPendingRef.current) {
+      return;
+    }
+    loadRequestPendingRef.current = true;
+    setCurrentPage((prev) => prev + 1);
+  }, [hasMore, isLoadingMore, loading]);
 
   // 设置滚动监听
   useEffect(() => {
@@ -285,9 +302,7 @@ function DoubanPageClient() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
-          setCurrentPage((prev) => prev + 1);
-        }
+        if (entries[0].isIntersecting) requestNextPage();
       },
       { threshold: 0.1 }
     );
@@ -300,7 +315,14 @@ function DoubanPageClient() {
         observerRef.current.disconnect();
       }
     };
-  }, [hasMore, isLoadingMore, loading]);
+  }, [hasMore, isLoadingMore, loading, requestNextPage]);
+
+  useEffect(() => {
+    const handleTvLoadMore = () => requestNextPage();
+    window.addEventListener('tintintv:tv-load-more', handleTvLoadMore);
+    return () =>
+      window.removeEventListener('tintintv:tv-load-more', handleTvLoadMore);
+  }, [requestNextPage]);
 
   // 处理选择器变化
   const handlePrimaryChange = useCallback(
