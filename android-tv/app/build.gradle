@@ -24,11 +24,11 @@ android {
     }
 
     defaultConfig {
-        applicationId "app.tintintv.firetv"
+        applicationId "tv.tintintv.firetv"
         minSdk 23
         targetSdk 35
-        versionCode 16
-        versionName "1.3.1"
+        versionCode 18
+        versionName "1.3.3"
 
         buildConfigField "String", "TINTINTV_URL", "\"${tvUrl}\""
         buildConfigField "String", "TV_ACCESS_TOKEN", "\"${tvToken}\""
