@@ -460,6 +460,7 @@ function HomeClient() {
               </h2>
               <Link
                 href='/douban?type=movie'
+                data-tv-focus='ignore'
                 className='group flex items-center rounded-lg px-2 py-1 text-sm text-slate-500 transition-colors duration-300 hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white'
               >
                 查看更多
@@ -522,6 +523,7 @@ function HomeClient() {
               </h2>
               <Link
                 href='/douban?type=tv'
+                data-tv-focus='ignore'
                 className='group flex items-center rounded-lg px-2 py-1 text-sm text-slate-500 transition-colors duration-300 hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white'
               >
                 查看更多
@@ -584,6 +586,7 @@ function HomeClient() {
               </h2>
               <Link
                 href='/douban?type=show'
+                data-tv-focus='ignore'
                 className='group flex items-center rounded-lg px-2 py-1 text-sm text-slate-500 transition-colors duration-300 hover:bg-slate-950/5 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white'
               >
                 查看更多

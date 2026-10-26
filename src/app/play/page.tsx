@@ -1036,6 +1036,14 @@ function PlayPageClient() {
     const onPause = () => {
       saveCurrentPlayProgress();
     };
+    const onPlay = () => {
+      if (
+        navigator.userAgent.includes('TintinTVAndroidTV/') &&
+        !document.fullscreenElement
+      ) {
+        void video.requestFullscreen?.().catch(() => undefined);
+      }
+    };
     const onPlaybackError = () => {
       if (cancelled || switchingSource) return;
       if (!usingDirect && playbackUrl !== videoUrl) {
@@ -1070,6 +1078,7 @@ function PlayPageClient() {
     video.addEventListener('timeupdate', onTimeUpdate);
     video.addEventListener('ended', onEnded);
     video.addEventListener('pause', onPause);
+    video.addEventListener('play', onPlay);
     video.addEventListener('error', onPlaybackError);
 
     function startPlayback(url: string, direct = false) {
@@ -1135,6 +1144,7 @@ function PlayPageClient() {
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('ended', onEnded);
       video.removeEventListener('pause', onPause);
+      video.removeEventListener('play', onPlay);
       video.removeEventListener('error', onPlaybackError);
       if (hlsRef.current) {
         try {
@@ -1256,6 +1266,9 @@ function PlayPageClient() {
           <div className='relative w-full overflow-hidden bg-black'>
             <video
               ref={videoRef}
+              data-tv-player
+              tabIndex={0}
+              aria-label={`${videoTitle || '影片'}播放器，确认键播放并进入全屏`}
               className='bg-black w-full h-full object-contain overflow-hidden'
               controls
               playsInline

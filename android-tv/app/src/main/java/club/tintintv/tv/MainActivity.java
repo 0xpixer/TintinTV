@@ -66,10 +66,10 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         String fireTvAgent = "Amazon".equalsIgnoreCase(Build.MANUFACTURER)
-                ? " TintinTVFireTV/1.2"
+                ? " TintinTVFireTV/1.2.1"
                 : "";
         settings.setUserAgentString(settings.getUserAgentString()
-                + " TintinTVAndroidTV/1.2" + fireTvAgent);
+                + " TintinTVAndroidTV/1.2.1" + fireTvAgent);
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);

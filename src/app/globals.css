@@ -1669,6 +1669,29 @@ html:not(.dark) .tv-mobile-header-actions button:hover {
 .tv-device .tv-video-card:focus .tv-video-poster {
   box-shadow: 0 0 0 4px #fff;
 }
+.tv-device .tv-home section:not(.tv-hero) {
+  scroll-margin-block: 88px;
+}
+.tv-device .tv-home-row > div:first-child,
+.tv-device .tv-episode-strip,
+.tv-device .tv-episode-panel .md\:overflow-x-auto {
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-inline: contain;
+}
+.tv-device .tv-home-row .tv-video-card,
+.tv-device .tv-episode-strip button,
+.tv-device .tv-episode-panel .md\:overflow-x-auto > button {
+  scroll-snap-align: center;
+}
+.tv-device .tv-player-frame video:focus {
+  outline-offset: -6px;
+}
+.tv-device .tv-episode-panel {
+  padding-block: 8px 18px;
+}
+.tv-device .tv-episode-panel button:focus {
+  transform: scale(1.06);
+}
 .tv-device :is(a, button, [role='link'], input, select) {
   scroll-margin: 110px 40px;
 }

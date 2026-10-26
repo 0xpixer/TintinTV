@@ -130,6 +130,7 @@ export default function ScrollableRow({
             }}
           >
             <button
+              data-tv-focus='ignore'
               onClick={handleScrollLeftClick}
               className='flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/95 shadow-lg transition-transform hover:scale-105 hover:bg-white dark:border-white/10 dark:bg-slate-900/90 dark:hover:bg-slate-800'
             >
@@ -159,6 +160,7 @@ export default function ScrollableRow({
             }}
           >
             <button
+              data-tv-focus='ignore'
               onClick={handleScrollRightClick}
               className='flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/95 shadow-lg transition-transform hover:scale-105 hover:bg-white dark:border-white/10 dark:bg-slate-900/90 dark:hover:bg-slate-800'
             >

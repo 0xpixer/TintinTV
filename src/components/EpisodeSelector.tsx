@@ -284,7 +284,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   );
 
   return (
-    <div className='flex h-full flex-col overflow-hidden border-t border-slate-200 px-3 dark:border-white/10 md:h-auto md:overflow-visible md:border-t-0 md:px-0'>
+    <div
+      data-tv-section='playback-options'
+      className='flex h-full flex-col overflow-hidden border-t border-slate-200 px-3 dark:border-white/10 md:h-auto md:overflow-visible md:border-t-0 md:px-0'
+    >
       {/* 主要的 Tab 切换 - 无缝融入设计 */}
       <div className='-mx-3 mb-1 flex flex-shrink-0 border-b border-slate-200 dark:border-white/10 md:mx-0 md:mb-3'>
         {totalEpisodes > 1 && (
