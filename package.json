@@ -18,6 +18,7 @@
     "gen:manifest": "node scripts/generate-manifest.js",
     "postbuild": "node scripts/check-tv-webview-compat.js",
     "apk:tv": "cd android-tv && JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=/opt/homebrew/share/android-commandlinetools ./gradlew assembleRelease && cd .. && mkdir -p dist && cp android-tv/app/build/outputs/apk/release/app-release.apk dist/tintintv-tv.apk",
+    "apk:firetv": "cd android-tv && JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=/opt/homebrew/share/android-commandlinetools ./gradlew assembleRelease && cd .. && mkdir -p dist && cp android-tv/app/build/outputs/apk/release/app-release.apk dist/tintintv-firetv.apk",
     "prepare": "husky install",
     "pages:build": "pnpm gen:runtime && pnpm gen:manifest && next build && npx @cloudflare/next-on-pages --experimental-minify"
   },

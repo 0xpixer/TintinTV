@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -35,6 +36,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private TextView statusView;
     private FrameLayout root;
+    private WebChromeClient webChromeClient;
     private View fullscreenView;
     private WebChromeClient.CustomViewCallback fullscreenCallback;
     private boolean mainFrameLoadFailed;
@@ -60,9 +62,14 @@ public class MainActivity extends Activity {
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
         settings.setDatabaseEnabled(true);
-        settings.setUserAgentString(
-                settings.getUserAgentString() + " TintinTVAndroidTV/1.1"
-        );
+        settings.setSupportZoom(false);
+        settings.setBuiltInZoomControls(false);
+        settings.setDisplayZoomControls(false);
+        String fireTvAgent = "Amazon".equalsIgnoreCase(Build.MANUFACTURER)
+                ? " TintinTVFireTV/1.2"
+                : "";
+        settings.setUserAgentString(settings.getUserAgentString()
+                + " TintinTVAndroidTV/1.2" + fireTvAgent);
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
@@ -70,7 +77,7 @@ public class MainActivity extends Activity {
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
         webView.requestFocus();
-        webView.setWebChromeClient(new WebChromeClient() {
+        webChromeClient = new WebChromeClient() {
             @Override
             public boolean onConsoleMessage(ConsoleMessage message) {
                 if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR
@@ -107,7 +114,8 @@ public class MainActivity extends Activity {
                 }
                 hideSystemUi();
             }
-        });
+        };
+        webView.setWebChromeClient(webChromeClient);
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
@@ -294,14 +302,52 @@ public class MainActivity extends Activity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK && fullscreenView != null) {
-            webView.getWebChromeClient().onHideCustomView();
+            webChromeClient.onHideCustomView();
             return true;
         }
         if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
             webView.goBack();
             return true;
         }
+        if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+                || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY
+                || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+            togglePlayback(keyCode);
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD) {
+            seekPlayback(10);
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_MEDIA_REWIND) {
+            seekPlayback(-10);
+            return true;
+        }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void togglePlayback(int keyCode) {
+        String requestedAction = keyCode == KeyEvent.KEYCODE_MEDIA_PLAY
+                ? "play"
+                : keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE ? "pause" : "toggle";
+        webView.evaluateJavascript(
+                "(function(action){var video=document.querySelector('video');"
+                        + "if(!video)return false;"
+                        + "if(action==='play'||(action==='toggle'&&video.paused))video.play();"
+                        + "else video.pause();return true;})('" + requestedAction + "')",
+                null
+        );
+    }
+
+    private void seekPlayback(int seconds) {
+        webView.evaluateJavascript(
+                "(function(offset){var video=document.querySelector('video');"
+                        + "if(!video)return false;"
+                        + "var duration=isFinite(video.duration)?video.duration:video.currentTime+offset;"
+                        + "video.currentTime=Math.max(0,Math.min(duration,video.currentTime+offset));"
+                        + "return true;})(" + seconds + ")",
+                null
+        );
     }
 
     @Override
