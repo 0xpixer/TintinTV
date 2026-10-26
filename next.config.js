@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 /* eslint-disable @typescript-eslint/no-var-requires */
+const path = require('path');
+
 const nextConfig = {
   output: 'standalone',
   eslint: {
@@ -24,7 +26,7 @@ const nextConfig = {
     ],
   },
 
-  webpack(config) {
+  webpack(config, { isServer }) {
     // Grab the existing rule that handles SVG imports
     const fileLoaderRule = config.module.rules.find((rule) =>
       rule.test?.test?.('.svg')
@@ -49,6 +51,14 @@ const nextConfig = {
         },
       }
     );
+
+    if (!isServer) {
+      config.module.rules.push({
+        test: /next[\\/]dist[\\/](?:esm[\\/])?lib[\\/]url\.js$/,
+        enforce: 'pre',
+        use: path.resolve(__dirname, 'scripts/legacy-webview-loader.js'),
+      });
+    }
 
     // Modify the file loader rule to ignore *.svg, since we have it handled now.
     fileLoaderRule.exclude = /\.svg$/i;
