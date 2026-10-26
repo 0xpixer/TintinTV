@@ -555,6 +555,7 @@ function PlayPageClient() {
     newTitle: string
   ) => {
     try {
+      prepareTvPlayback();
       // 显示换源加载状态
       setVideoLoadingStage('sourceChanging');
       setIsVideoLoading(true);
@@ -633,12 +634,31 @@ function PlayPageClient() {
   // ---------------------------------------------------------------------------
   // 集数切换
   // ---------------------------------------------------------------------------
+  const prepareTvPlayback = () => {
+    if (!navigator.userAgent.includes('TintinTVAndroidTV/')) return false;
+
+    continuePlayingRef.current = true;
+    const video = videoRef.current;
+    if (video && !document.fullscreenElement) {
+      void video.requestFullscreen?.().catch(() => undefined);
+    }
+    return true;
+  };
+
   // 处理集数切换
   const handleEpisodeChange = (episodeNumber: number) => {
     if (episodeNumber >= 0 && episodeNumber < totalEpisodes) {
       // 在更换集数前保存当前播放进度
       if (videoRef.current && videoRef.current.paused) {
         saveCurrentPlayProgress();
+      }
+      const shouldAutoPlay = prepareTvPlayback();
+      if (shouldAutoPlay) setIsVideoLoading(true);
+      if (episodeNumber === currentEpisodeIndex) {
+        if (shouldAutoPlay && videoRef.current) {
+          void videoRef.current.play().catch(() => undefined);
+        }
+        return;
       }
       setCurrentEpisodeIndex(episodeNumber);
     }

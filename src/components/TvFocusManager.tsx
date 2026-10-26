@@ -80,6 +80,27 @@ function requestTvFullscreen(video: HTMLVideoElement) {
   void video.play().catch(() => undefined);
 }
 
+export function findPlayFocusBridgeTarget(
+  active: HTMLElement,
+  direction: SpatialDirection,
+  root: ParentNode = document
+) {
+  if (
+    direction === 'up' &&
+    active.closest('[data-tv-section="playback-options"]')
+  ) {
+    return root.querySelector<HTMLElement>('[data-tv-player]');
+  }
+
+  if (direction === 'down' && active.matches('[data-tv-player]')) {
+    return root.querySelector<HTMLElement>(
+      '[data-tv-section="playback-options"] button[aria-pressed="true"], [data-tv-section="playback-options"] button:not([disabled])'
+    );
+  }
+
+  return null;
+}
+
 export default function TvFocusManager() {
   const pathname = usePathname();
 
@@ -131,6 +152,19 @@ export default function TvFocusManager() {
         const fallback = focusable[0];
         if (fallback) focusElement(fallback);
         return;
+      }
+
+      if (pathname.startsWith('/play')) {
+        const bridgeTarget = findPlayFocusBridgeTarget(
+          active,
+          direction as SpatialDirection
+        );
+        if (bridgeTarget && isVisible(bridgeTarget)) {
+          event.preventDefault();
+          event.stopPropagation();
+          focusElement(bridgeTarget, direction as SpatialDirection);
+          return;
+        }
       }
 
       let candidates = focusable.filter((element) => element !== active);
