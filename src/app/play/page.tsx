@@ -8,6 +8,8 @@ import {
   CircleAlert,
   Heart,
   LoaderCircle,
+  Maximize,
+  PictureInPicture2,
   RotateCcw,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -25,6 +27,14 @@ import {
   savePlayRecord,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import {
+  enableAutomaticPictureInPicture,
+  isAppleTouchDevice,
+  requestNativeVideoFullscreen,
+  requestVideoPictureInPicture,
+  supportsVideoPictureInPicture,
+  WebKitVideoElement,
+} from '@/lib/ios-video-controls';
 import { readPlayItemsFromSearchParams } from '@/lib/play-handoff';
 import {
   matchingPlaybackSources,
@@ -72,6 +82,9 @@ function PlayPageClient() {
   const [adFilterUnavailable, setAdFilterUnavailable] = useState(false);
   const [playbackAttempt, setPlaybackAttempt] = useState(0);
   const [isTvDevice, setIsTvDevice] = useState(false);
+  const [isAppleTouch, setIsAppleTouch] = useState(false);
+  const [pictureInPictureAvailable, setPictureInPictureAvailable] =
+    useState(false);
   const [tvPlayerFeedback, setTvPlayerFeedback] =
     useState<TvPlayerFeedback | null>(null);
   const continuePlayingRef = useRef(false);
@@ -87,6 +100,7 @@ function PlayPageClient() {
 
   useEffect(() => {
     setIsTvDevice(navigator.userAgent.includes('TintinTVAndroidTV/'));
+    setIsAppleTouch(isAppleTouchDevice(navigator));
 
     const handleFeedback = (event: Event) => {
       const feedback = (event as CustomEvent<TvPlayerFeedback>).detail;
@@ -228,6 +242,7 @@ function PlayPageClient() {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const iosNativeFullscreenRef = useRef(false);
 
   // -----------------------------------------------------------------------------
   // 工具函数（Utils）
@@ -701,6 +716,73 @@ function PlayPageClient() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isAppleTouch || loading) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    enableAutomaticPictureInPicture(video);
+    setPictureInPictureAvailable(supportsVideoPictureInPicture(video));
+
+    const updatePresentationMode = () => {
+      const mode = (video as WebKitVideoElement).webkitPresentationMode;
+      iosNativeFullscreenRef.current = mode === 'fullscreen';
+      document.documentElement.classList.toggle(
+        'ios-video-native-fullscreen',
+        mode === 'fullscreen'
+      );
+    };
+    const onBeginFullscreen = () => {
+      iosNativeFullscreenRef.current = true;
+      document.documentElement.classList.add('ios-video-native-fullscreen');
+    };
+    const onEndFullscreen = () => {
+      iosNativeFullscreenRef.current = false;
+      document.documentElement.classList.remove('ios-video-native-fullscreen');
+    };
+    const onVisibilityChange = () => {
+      if (
+        document.visibilityState === 'hidden' &&
+        iosNativeFullscreenRef.current &&
+        !video.paused &&
+        supportsVideoPictureInPicture(video)
+      ) {
+        void requestVideoPictureInPicture(video).catch(() => undefined);
+      }
+    };
+
+    video.addEventListener(
+      'webkitpresentationmodechanged',
+      updatePresentationMode
+    );
+    video.addEventListener('webkitbeginfullscreen', onBeginFullscreen);
+    video.addEventListener('webkitendfullscreen', onEndFullscreen);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      video.removeEventListener(
+        'webkitpresentationmodechanged',
+        updatePresentationMode
+      );
+      video.removeEventListener('webkitbeginfullscreen', onBeginFullscreen);
+      video.removeEventListener('webkitendfullscreen', onEndFullscreen);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      document.documentElement.classList.remove('ios-video-native-fullscreen');
+    };
+  }, [isAppleTouch, loading]);
+
+  const enterApplePictureInPicture = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    void requestVideoPictureInPicture(video).catch(() => undefined);
+  };
+
+  const enterAppleNativeFullscreen = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    void requestNativeVideoFullscreen(video).catch(() => undefined);
+  };
+
   // ---------------------------------------------------------------------------
   // 集数切换
   // ---------------------------------------------------------------------------
@@ -1075,6 +1157,7 @@ function PlayPageClient() {
     // 设置基础属性
     video.setAttribute('playsinline', 'true');
     (video as any).webkitPlaysInline = true;
+    enableAutomaticPictureInPicture(video);
     video.poster = videoCover || '';
     video.crossOrigin = 'anonymous';
 
@@ -1372,6 +1455,28 @@ function PlayPageClient() {
               x-webkit-airplay='allow'
               preload='metadata'
             />
+            {isAppleTouch && (
+              <div className='tv-ios-video-actions md:hidden'>
+                {pictureInPictureAvailable && (
+                  <button
+                    type='button'
+                    aria-label='进入画中画播放'
+                    title='画中画'
+                    onClick={enterApplePictureInPicture}
+                  >
+                    <PictureInPicture2 className='h-5 w-5' aria-hidden='true' />
+                  </button>
+                )}
+                <button
+                  type='button'
+                  aria-label='进入 iPhone 原生全屏'
+                  title='全屏'
+                  onClick={enterAppleNativeFullscreen}
+                >
+                  <Maximize className='h-5 w-5' aria-hidden='true' />
+                </button>
+              </div>
+            )}
             {tvPlayerFeedback && (
               <div
                 className='tv-player-feedback'

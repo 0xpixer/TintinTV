@@ -286,7 +286,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   return (
     <div
       data-tv-section='playback-options'
-      className='flex h-full flex-col overflow-hidden border-t border-slate-200 px-3 dark:border-white/10 md:h-auto md:overflow-visible md:border-t-0 md:px-0'
+      className='flex h-full min-h-0 flex-col overflow-visible border-t border-slate-200 px-3 dark:border-white/10 md:h-auto md:border-t-0 md:px-0'
     >
       {/* 主要的 Tab 切换 - 无缝融入设计 */}
       <div className='-mx-3 mb-1 flex flex-shrink-0 border-b border-slate-200 dark:border-white/10 md:mx-0 md:mb-3'>
@@ -423,7 +423,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
 
       {/* 换源 Tab 内容 */}
       {activeTab === 'sources' && (
-        <div className='flex flex-col h-full mt-4 md:mt-0 md:h-auto'>
+        <div className='tv-source-panel mt-4 flex h-full min-h-0 flex-col md:mt-0 md:h-auto'>
           {sourceSearchLoading && (
             <div className='flex items-center justify-center py-8'>
               <LoaderCircle
@@ -469,7 +469,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           {!sourceSearchLoading &&
             !sourceSearchError &&
             availableSources.length > 0 && (
-              <div className='flex-1 pb-4 md:flex md:gap-3 md:overflow-x-auto'>
+              <div className='tv-source-list min-h-0 flex-1 overflow-y-auto pb-4 md:flex md:max-h-none md:gap-3 md:overflow-x-auto md:overflow-y-visible'>
                 {[...availableSources]
                   .sort((a, b) => {
                     const aIsCurrent =

@@ -1347,6 +1347,31 @@ html:not(.dark) .tv-mobile-header-actions button:hover {
   max-height: 100%;
   border-radius: 0;
 }
+.tv-ios-video-actions {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 510;
+  display: flex;
+  gap: 8px;
+}
+.tv-ios-video-actions button {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 50%;
+  background: rgba(10, 10, 12, 0.62);
+  color: #fff;
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+}
+html.ios-video-native-fullscreen,
+html.ios-video-native-fullscreen body {
+  background: #000 !important;
+}
 .tv-player-shell:fullscreen,
 .tv-player-shell:-webkit-full-screen {
   display: flex;
@@ -1637,6 +1662,16 @@ html:not(.dark) .tv-mobile-header-actions button:hover {
     height: auto;
     min-height: 0;
     border-radius: 0;
+  }
+  .tv-source-panel {
+    min-height: 0;
+  }
+  .tv-source-list {
+    max-height: min(58dvh, 520px);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
   }
   .tv-hero {
     min-height: 490px;
