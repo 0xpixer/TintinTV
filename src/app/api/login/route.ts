@@ -13,6 +13,7 @@ const STORAGE_TYPE =
     | 'redis'
     | 'd1'
     | undefined) || 'localstorage';
+const AUTH_COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
 
 // 生成签名
 async function generateSignature(
@@ -113,6 +114,7 @@ export async function POST(req: NextRequest) {
       response.cookies.set('auth', cookieValue, {
         path: '/',
         expires,
+        maxAge: AUTH_COOKIE_MAX_AGE,
         sameSite: 'lax', // 改为 lax 以支持 PWA
         httpOnly: false, // PWA 需要客户端可访问
         secure: req.nextUrl.protocol === 'https:',
@@ -149,6 +151,7 @@ export async function POST(req: NextRequest) {
       response.cookies.set('auth', cookieValue, {
         path: '/',
         expires,
+        maxAge: AUTH_COOKIE_MAX_AGE,
         sameSite: 'lax', // 改为 lax 以支持 PWA
         httpOnly: false, // PWA 需要客户端可访问
         secure: req.nextUrl.protocol === 'https:',
@@ -188,6 +191,7 @@ export async function POST(req: NextRequest) {
       response.cookies.set('auth', cookieValue, {
         path: '/',
         expires,
+        maxAge: AUTH_COOKIE_MAX_AGE,
         sameSite: 'lax', // 改为 lax 以支持 PWA
         httpOnly: false, // PWA 需要客户端可访问
         secure: req.nextUrl.protocol === 'https:',

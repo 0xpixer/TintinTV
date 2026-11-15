@@ -1,5 +1,15 @@
 export type CacheStrategy = 'network-only' | 'network-first' | 'cache-first';
 
+export function shouldCacheNetworkResponse(
+  status: number,
+  redirected: boolean,
+  responseUrl: string
+): boolean {
+  if (status !== 200 || redirected) return false;
+  if (!responseUrl) return false;
+  return new URL(responseUrl).pathname !== '/login';
+}
+
 export function getCacheStrategyForRequest(
   method: string,
   urlInput: string

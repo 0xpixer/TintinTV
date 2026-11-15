@@ -2,7 +2,10 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { runInNewContext } from 'vm';
 
-import { getCacheStrategyForRequest } from './pwa-cache-policy';
+import {
+  getCacheStrategyForRequest,
+  shouldCacheNetworkResponse,
+} from './pwa-cache-policy';
 
 describe('PWA cache policy', () => {
   it('does not handle non-GET requests', () => {
@@ -93,5 +96,48 @@ describe('PWA cache policy', () => {
         getCacheStrategyForRequest('GET', `https://cdn.example${path}`)
       ).toBe('network-only');
     }
+  });
+
+  it('never stores a redirected login page as the app homepage', () => {
+    expect(
+      shouldCacheNetworkResponse(200, true, 'https://example.com/login')
+    ).toBe(false);
+    expect(
+      shouldCacheNetworkResponse(200, false, 'https://example.com/login')
+    ).toBe(false);
+    expect(shouldCacheNetworkResponse(200, false, 'https://example.com/')).toBe(
+      true
+    );
+  });
+
+  it('uses the same response cache guard in the service worker', () => {
+    const script = readFileSync(join(process.cwd(), 'public/sw.js'), 'utf8');
+    const context = {
+      URL,
+      self: { addEventListener: jest.fn() },
+    };
+    const shouldCache = runInNewContext(
+      `${script}\nshouldCacheNetworkResponse`,
+      context
+    ) as (response: {
+      status: number;
+      redirected: boolean;
+      url: string;
+    }) => boolean;
+
+    expect(
+      shouldCache({
+        status: 200,
+        redirected: true,
+        url: 'https://example.com/login',
+      })
+    ).toBe(false);
+    expect(
+      shouldCache({
+        status: 200,
+        redirected: false,
+        url: 'https://example.com/',
+      })
+    ).toBe(true);
   });
 });
